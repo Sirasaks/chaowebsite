@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import pool from "@/lib/db";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+import { RowDataPacket } from "mysql2";
+import { getJwtSecret } from "@/lib/env";
+
+export async function GET() {
+    try {
+        // Authenticate Admin
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        if (!token) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+        const [users] = await pool.query<RowDataPacket[]>("SELECT role FROM users WHERE id = ?", [decoded.userId]);
+
+        if (users.length === 0 || users[0].role !== "owner") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        // Fetch settings
+        const [rows] = await pool.query<RowDataPacket[]>(
+            "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')"
+        );
+
+        const settings: Record<string, string> = {};
+        rows.forEach((row) => {
+            settings[row.setting_key] = row.setting_value;
+        });
+
+        return NextResponse.json(settings);
+
+    } catch (error: any) {
+        console.error("Fetch Payment Settings Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+export async function POST(request: Request) {
+    const connection = await pool.getConnection();
+    try {
+        // Authenticate Admin
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        if (!token) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+        const [users] = await pool.query<RowDataPacket[]>("SELECT role FROM users WHERE id = ?", [decoded.userId]);
+
+        if (users.length === 0 || users[0].role !== "owner") {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const { bank_name, bank_account_number, bank_account_name, truemoney_phone, bank_transfer_enabled, truemoney_angpao_enabled } = body;
+
+        await connection.beginTransaction();
+
+        // Upsert settings
+        const settingsToUpdate = [
+            { key: "bank_name", value: bank_name },
+            { key: "bank_account_number", value: bank_account_number },
+            { key: "bank_account_name", value: bank_account_name },
+            { key: "truemoney_phone", value: truemoney_phone },
+            { key: "bank_transfer_enabled", value: String(bank_transfer_enabled) },
+            { key: "truemoney_angpao_enabled", value: String(truemoney_angpao_enabled) },
+        ];
+
+        for (const setting of settingsToUpdate) {
+            if (setting.value !== undefined) {
+                await connection.query(
+                    "INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                    [setting.key, setting.value, setting.value]
+                );
+            }
+        }
+
+        await connection.commit();
+
+        return NextResponse.json({ message: "บันทึกการตั้งค่าการชำระเงินเรียบร้อยแล้ว" });
+
+    } catch (error: any) {
+        await connection.rollback();
+        console.error("Update Payment Settings Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    } finally {
+        connection.release();
+    }
+}
