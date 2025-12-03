@@ -205,7 +205,7 @@ CREATE TABLE `topup_history` (
 
 --
 CREATE TABLE `site_settings` (
-    `id` int(11) NOT NULL DEFAULT 1,
+    `id` int(11) NOT NULL AUTO_INCREMENT,
     `shop_id` int(11) NOT NULL DEFAULT 0,
     `site_title` varchar(255) NOT NULL DEFAULT 'My Shop',
     `site_description` text DEFAULT NULL,

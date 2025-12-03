@@ -15,7 +15,7 @@ export async function GET() {
 
         // Check if it's a Master User
         const [rows] = await pool.query(
-            "SELECT id, username, role FROM master_users WHERE id = ?",
+            "SELECT id, username, role, credit FROM master_users WHERE id = ?",
             [decoded.userId]
         );
 
@@ -28,7 +28,7 @@ export async function GET() {
                 id: user.id,
                 username: user.username,
                 role: user.role,
-                credit: 0 // Master users don't have credit yet
+                credit: user.credit
             },
         });
     } catch (err) {

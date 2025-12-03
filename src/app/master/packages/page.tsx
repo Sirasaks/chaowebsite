@@ -7,6 +7,7 @@ import { Check, Loader2, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { RentWebDialog } from "@/components/master/RentWebDialog";
 
 interface Product {
     id: number;
@@ -19,9 +20,12 @@ interface Product {
 export default function PackagesPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const [purchasing, setPurchasing] = useState<number | null>(null);
     const { user } = useAuth();
     const router = useRouter();
+
+    // Dialog State
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -41,49 +45,13 @@ export default function PackagesPage() {
         fetchProducts();
     }, []);
 
-    const handlePurchase = async (product: Product) => {
+    const handleRentClick = (product: Product) => {
         if (!user) {
             router.push("/login?callbackUrl=/master/packages");
             return;
         }
-
-        if (Number(user.credit) < Number(product.price)) {
-            toast.error("เครดิตไม่เพียงพอ กรุณาเติมเงิน", {
-                action: {
-                    label: "เติมเงิน",
-                    onClick: () => router.push("/topup")
-                }
-            });
-            return;
-        }
-
-        if (!confirm(`ยืนยันการเช่าเว็บไซต์แพ็คเกจ ${product.name} ราคา ${Number(product.price).toFixed(2)} บาท?`)) {
-            return;
-        }
-
-        setPurchasing(product.id);
-        try {
-            const res = await fetch("/api/master/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: product.id })
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                toast.success("สั่งซื้อสำเร็จ!");
-                // Force reload to update credit in navbar
-                window.location.href = "/master"; // Redirect to dashboard (future)
-            } else {
-                toast.error(data.error || "การสั่งซื้อล้มเหลว");
-            }
-        } catch (error) {
-            console.error("Purchase error:", error);
-            toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-        } finally {
-            setPurchasing(null);
-        }
+        setSelectedProduct(product);
+        setIsDialogOpen(true);
     };
 
     if (loading) {
@@ -135,25 +103,26 @@ export default function PackagesPage() {
                         <CardFooter>
                             <Button
                                 className="w-full bg-blue-600 hover:bg-blue-700"
-                                onClick={() => handlePurchase(product)}
-                                disabled={purchasing === product.id}
+                                onClick={() => handleRentClick(product)}
                             >
-                                {purchasing === product.id ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        กำลังดำเนินการ...
-                                    </>
-                                ) : (
-                                    <>
-                                        <ShoppingBag className="mr-2 h-4 w-4" />
-                                        เช่าเลย
-                                    </>
-                                )}
+                                <ShoppingBag className="mr-2 h-4 w-4" />
+                                เช่าเลย
                             </Button>
                         </CardFooter>
                     </Card>
                 ))}
             </div>
+
+            {/* Rent Dialog */}
+            {selectedProduct && user && (
+                <RentWebDialog
+                    isOpen={isDialogOpen}
+                    onClose={() => setIsDialogOpen(false)}
+                    packagePrice={Number(selectedProduct.price)}
+                    packageName={selectedProduct.name}
+                    userCredit={Number(user.credit)}
+                />
+            )}
         </div>
     );
 }

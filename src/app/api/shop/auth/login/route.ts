@@ -24,9 +24,27 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { login, password } = loginSchema.parse(body);
 
+    // 1. Get Shop ID from Subdomain
+    const subdomain = req.headers.get("x-shop-subdomain");
+    if (!subdomain) {
+      return NextResponse.json({ error: "ไม่พบข้อมูลร้านค้า (Subdomain missing)" }, { status: 400 });
+    }
+
+    const [shopRows] = await pool.query(
+      "SELECT id FROM shops WHERE subdomain = ?",
+      [subdomain]
+    );
+
+    if ((shopRows as any[]).length === 0) {
+      return NextResponse.json({ error: "ไม่พบร้านค้านี้ในระบบ" }, { status: 404 });
+    }
+
+    const shopId = (shopRows as any[])[0].id;
+
+    // 2. Find User in this Shop
     const [rows] = await pool.query(
-      "SELECT id, username, password, role, credit FROM users WHERE username = ? OR email = ?",
-      [login, login]
+      "SELECT id, username, password, role, credit FROM users WHERE (username = ? OR email = ?) AND shop_id = ?",
+      [login, login, shopId]
     );
     const user = (rows as any[])[0];
     if (!user) return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
