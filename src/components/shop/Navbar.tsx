@@ -56,7 +56,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
         try {
             await fetch("/api/shop/auth/logout", { method: "POST" })
             // Force refresh to clear all states
-            window.location.href = "/"
+            window.location.href = "/login"
         } catch (err) {
             console.error(err)
         }

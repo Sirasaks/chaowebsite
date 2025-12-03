@@ -18,7 +18,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+interface AuthProviderProps {
+  children: ReactNode
+  endpoint: string
+}
+
+function BaseAuthProvider({ children, endpoint }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -28,14 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch("/api/shop/auth/me")
+        const res = await fetch(endpoint)
         if (res.ok) {
           const data = await res.json()
           if (data.user) {
             setUser({ username: data.user.username, credit: Number(data.user.credit || 0), role: data.user.role })
           }
         } else {
-          // กรณี API ตอบกลับมาว่าไม่สำเร็จ (เช่น 401 Unauthorized)
           setUser(null)
         }
       } catch (err) {
@@ -47,15 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     fetchUser()
-  }, [])
+  }, [endpoint])
 
-  // ใช้ useMemo เพื่อป้องกันการสร้าง object value ใหม่ทุกครั้งที่ re-render
   const value = useMemo(() => ({
     user, setUser, loading, error
   }), [user, loading, error])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
+export function ShopAuthProvider({ children }: { children: ReactNode }) {
+  return <BaseAuthProvider endpoint="/api/shop/auth/me">{children}</BaseAuthProvider>
+}
+
+export function MasterAuthProvider({ children }: { children: ReactNode }) {
+  return <BaseAuthProvider endpoint="/api/master/auth/me">{children}</BaseAuthProvider>
+}
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext)

@@ -1,8 +1,24 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
 export default function MasterPage() {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center p-24">
-            <h1 className="text-4xl font-bold">Welcome to ChaoWeb Master Platform</h1>
-            <p className="mt-4 text-xl">Create your own shop today!</p>
+        <div className="flex min-h-screen flex-col items-center justify-center p-24 bg-slate-50">
+            <h1 className="text-4xl font-bold text-slate-900">Welcome to ChaoWeb Platform</h1>
+            <p className="mt-4 text-xl text-slate-600">Create your own game top-up shop in minutes!</p>
+
+            <div className="mt-8 flex gap-4">
+                <Link href="/register">
+                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                        Get Started
+                    </Button>
+                </Link>
+                <Link href="/login">
+                    <Button variant="outline" size="lg">
+                        Login
+                    </Button>
+                </Link>
+            </div>
         </div>
     )
 }

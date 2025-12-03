@@ -1,205 +1,274 @@
--- Full Database Schema v8 (Symmetric Master & Shop)
--- Concept: Master is just a "Shop" that sells "Websites".
+-- My Shop V5 - Complete Multi-Tenant Database Schema
 
--- ==========================================
--- GROUP 1: MASTER SYSTEM (SaaS Management)
--- Structure mirrors Shop System for consistency
--- ==========================================
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 
--- 1.1 Master Users (ลูกค้าที่มาเช่าเว็บ)
+START TRANSACTION;
+
+SET time_zone = "+00:00";
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */
+;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */
+;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */
+;
+/*!40101 SET NAMES utf8mb4 */
+;
+
+-- --------------------------------------------------------
+-- MASTER SYSTEM TABLES
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `master_users`
+-- (For System Admin and Shop Owners)
+--
+
 CREATE TABLE `master_users` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `username` varchar(50) NOT NULL,
     `email` varchar(100) NOT NULL,
     `password` varchar(255) NOT NULL,
-    `role` enum('super_admin', 'user') NOT NULL DEFAULT 'user', -- user = tenant
+    `role` enum('user', 'admin') NOT NULL DEFAULT 'user', -- 'admin' = Super Admin, 'user' = Shop Owner
     `credit` decimal(10, 2) NOT NULL DEFAULT 0.00,
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    UNIQUE KEY `username` (`username`),
-    UNIQUE KEY `email` (`email`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    UNIQUE KEY `idx_master_username` (`username`),
+    UNIQUE KEY `idx_master_email` (`email`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 1.2 Master Products (แพ็กเกจเช่าเว็บ) -> เหมือน shop_products
+--
+-- Table structure for table `master_products`
+-- (For Rental Packages)
+--
+
 CREATE TABLE `master_products` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `name` varchar(255) NOT NULL, -- e.g. "Starter Plan"
+    `name` varchar(255) NOT NULL,
     `price` decimal(10, 2) NOT NULL,
-    `image` varchar(500) DEFAULT NULL,
-    `description` text,
-    `duration_days` int(11) NOT NULL DEFAULT 30, -- Special field for rental
+    `duration_days` int(11) NOT NULL COMMENT 'Duration in days (e.g., 30, 365)',
+    `description` text DEFAULT NULL,
     `is_active` tinyint(1) DEFAULT 1,
-    `display_order` int(11) DEFAULT 0,
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 1.3 Master Orders (ประวัติการซื้อแพ็กเกจ) -> เหมือน shop_orders
-CREATE TABLE `master_orders` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) NOT NULL, -- Link to master_users.id
-    `product_id` int(11) NOT NULL,
-    `price` decimal(10, 2) NOT NULL,
-    `status` enum(
-        'pending',
-        'completed',
-        'failed'
-    ) DEFAULT 'pending',
-    `data` text, -- เก็บข้อมูลร้านที่สร้าง (subdomain, shop_name)
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    PRIMARY KEY (`id`),
-    KEY `idx_user` (`user_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+--
+-- Table structure for table `master_settings`
+-- (For System API Keys, Payment Configs)
+--
 
--- 1.4 Master Topup History (ประวัติเติมเงินเข้าระบบ Master) -> เหมือน shop_topup_history
-CREATE TABLE `master_topup_history` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) NOT NULL,
-    `trans_ref` varchar(255) NOT NULL,
-    `amount` decimal(10, 2) NOT NULL,
-    `status` varchar(50) DEFAULT 'completed',
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    PRIMARY KEY (`id`),
-    KEY `idx_user` (`user_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-
--- 1.5 Shops (ทะเบียนร้านค้าที่ถูกสร้างขึ้น)
 CREATE TABLE `shops` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `owner_id` int(11) NOT NULL, -- Link to master_users.id
     `subdomain` varchar(50) NOT NULL,
     `name` varchar(255) NOT NULL,
+    `owner_id` int(11) NOT NULL, -- Links to master_users.id
     `expire_date` datetime DEFAULT NULL,
     `is_active` tinyint(1) DEFAULT 1,
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
     PRIMARY KEY (`id`),
     UNIQUE KEY `subdomain` (`subdomain`),
-    KEY `idx_owner` (`owner_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_owner_id` (`owner_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- ==========================================
--- GROUP 2: SHOP SYSTEM (E-commerce for End Users)
--- ==========================================
+-- --------------------------------------------------------
+-- SHOP SYSTEM TABLES (Multi-Tenant)
+-- All tables here must have `shop_id`
+-- --------------------------------------------------------
 
--- 2.1 Shop Users
-CREATE TABLE `shop_users` (
+--
+-- Table structure for table `users`
+-- (For Shop Customers)
+--
+
+CREATE TABLE `users` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
     `username` varchar(50) NOT NULL,
     `email` varchar(100) NOT NULL,
     `password` varchar(255) NOT NULL,
-    `role` enum('user', 'admin') NOT NULL DEFAULT 'user',
-    `credit` decimal(10, 2) NOT NULL DEFAULT 0.00,
+    `role` enum('user', 'owner') NOT NULL DEFAULT 'user',
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `credit` decimal(10, 2) NOT NULL DEFAULT 0.00,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_username_shop` (`username`, `shop_id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    UNIQUE KEY `idx_email_shop` (`email`, `shop_id`),
+    KEY `idx_shop_id` (`shop_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.2 Shop Products
-CREATE TABLE `shop_products` (
+--
+-- Table structure for table `categories`
+--
+
+CREATE TABLE `categories` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
     `name` varchar(255) NOT NULL,
-    `price` decimal(10, 2) NOT NULL,
-    `image` varchar(500) DEFAULT NULL,
-    `description` text,
-    `type` enum('account', 'code', 'service') NOT NULL DEFAULT 'account',
-    `stock_data` text,
     `slug` varchar(255) NOT NULL,
-    `is_active` tinyint(1) DEFAULT 1,
+    `image` varchar(500) DEFAULT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     `is_recommended` tinyint(1) DEFAULT 0,
     `display_order` int(11) DEFAULT 0,
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `product_ids` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`product_ids`)),
+    `is_active` tinyint(1) DEFAULT 1,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_slug_shop` (`slug`, `shop_id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_shop_id` (`shop_id`),
+    KEY `idx_categories_recommended` (
+        `is_recommended`,
+        `display_order`
+    )
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.3 Shop Orders
-CREATE TABLE `shop_orders` (
+--
+-- Table structure for table `products`
+--
+
+CREATE TABLE `products` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
-    `user_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
+    `name` varchar(255) NOT NULL,
+    `price` varchar(50) NOT NULL,
+    `description` text DEFAULT NULL,
+    `image` varchar(500) DEFAULT NULL,
+    `account` text DEFAULT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `slug` varchar(255) NOT NULL,
+    `type` enum('account', 'form', 'api') NOT NULL DEFAULT 'account',
+    `api_type_id` varchar(255) DEFAULT NULL,
+    `is_auto_price` tinyint(1) DEFAULT 1,
+    `is_recommended` tinyint(1) DEFAULT 0,
+    `display_order` int(11) DEFAULT 0,
+    `is_active` tinyint(1) DEFAULT 1,
+    `api_provider` varchar(50) DEFAULT 'gafiw',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_slug_shop` (`slug`, `shop_id`),
+    KEY `idx_shop_id` (`shop_id`),
+    KEY `idx_products_recommended` (
+        `is_recommended`,
+        `display_order`
+    )
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+--
+-- Table structure for table `orders`
+--
+
+CREATE TABLE `orders` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
+    `user_id` int(11) DEFAULT NULL,
     `product_id` int(11) NOT NULL,
     `price` decimal(10, 2) NOT NULL,
     `quantity` int(11) NOT NULL,
+    `data` text DEFAULT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     `status` enum(
         'pending',
+        'api_pending',
         'completed',
-        'failed'
+        'failed',
+        'cancelled'
     ) DEFAULT 'pending',
-    `data` text,
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `note` text DEFAULT NULL,
+    `api_transaction_id` varchar(255) DEFAULT NULL,
+    `retry_count` int(11) DEFAULT 0,
+    `last_error` text DEFAULT NULL,
     PRIMARY KEY (`id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_shop_id` (`shop_id`),
+    KEY `idx_orders_user_id` (`user_id`),
+    KEY `idx_orders_created_at` (`created_at`),
+    CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.4 Shop Topup History
-CREATE TABLE `shop_topup_history` (
+--
+-- Table structure for table `topup_history`
+--
+
+CREATE TABLE `topup_history` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
     `user_id` int(11) NOT NULL,
     `trans_ref` varchar(255) NOT NULL,
     `amount` decimal(10, 2) NOT NULL,
+    `sender_name` varchar(255) DEFAULT NULL,
+    `receiver_name` varchar(255) DEFAULT NULL,
     `status` varchar(50) DEFAULT 'completed',
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    UNIQUE KEY `trans_ref` (`trans_ref`),
+    KEY `idx_shop_id` (`shop_id`),
+    KEY `idx_topup_user_id` (`user_id`),
+    CONSTRAINT `topup_history_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.5 Shop Categories
-CREATE TABLE `shop_categories` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
-    `name` varchar(255) NOT NULL,
-    `slug` varchar(255) NOT NULL,
-    `image` varchar(500) DEFAULT NULL,
-    `is_recommended` tinyint(1) DEFAULT 0,
-    `display_order` int(11) DEFAULT 0,
-    `is_active` tinyint(1) DEFAULT 1,
+--
+CREATE TABLE `site_settings` (
+    `id` int(11) NOT NULL DEFAULT 1,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
+    `site_title` varchar(255) NOT NULL DEFAULT 'My Shop',
+    `site_description` text DEFAULT NULL,
+    `site_icon` text DEFAULT NULL,
+    `site_logo` text DEFAULT NULL,
+    `site_background` text DEFAULT NULL,
+    `primary_color` varchar(50) NOT NULL DEFAULT '#ea580c',
+    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    `secondary_color` varchar(7) DEFAULT '#8b5cf6',
+    `contact_link` varchar(255) DEFAULT '',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_slug_shop` (`slug`, `shop_id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_shop_id` (`shop_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.6 Shop Settings
-CREATE TABLE `shop_settings` (
-    `shop_id` int(11) NOT NULL,
-    `setting_key` varchar(255) NOT NULL,
-    `setting_value` text,
-    PRIMARY KEY (`shop_id`, `setting_key`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+--
+-- Table structure for table `slideshow_images`
+--
 
--- 2.7 Shop Site Settings
-CREATE TABLE `shop_site_settings` (
+CREATE TABLE `slideshow_images` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
-    `site_title` varchar(255) DEFAULT 'My Shop',
-    `site_logo` text,
-    `primary_color` varchar(50) DEFAULT '#ea580c',
-    PRIMARY KEY (`id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-
--- 2.8 Shop Slideshow Images
-CREATE TABLE `shop_slideshow_images` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
     `image_url` text NOT NULL,
     `display_order` int(11) DEFAULT 0,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_shop_id` (`shop_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
--- 2.9 Shop Quick Links
-CREATE TABLE `shop_quick_links` (
+--
+-- Table structure for table `quick_links`
+--
+
+CREATE TABLE `quick_links` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
-    `shop_id` int(11) NOT NULL,
+    `shop_id` int(11) NOT NULL DEFAULT 0,
     `title` varchar(255) NOT NULL,
-    `link_url` varchar(255) NOT NULL,
     `image_url` varchar(255) NOT NULL,
-    `display_order` int(11) DEFAULT 0,
+    `link_url` varchar(255) NOT NULL,
+    `is_external` tinyint(1) DEFAULT 0,
+    `display_order` int(11) NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
     PRIMARY KEY (`id`),
-    KEY `idx_shop` (`shop_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+    KEY `idx_shop_id` (`shop_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+--
+-- Table structure for table `password_resets`
+--
+
+CREATE TABLE `password_resets` (
+    `email` varchar(255) NOT NULL,
+    `token` varchar(255) NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`token`),
+    KEY `email` (`email`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */
+;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */
+;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */
+;

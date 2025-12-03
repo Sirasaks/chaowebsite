@@ -33,6 +33,16 @@ export async function middleware(req: NextRequest) {
         return NextResponse.next();
     }
 
+    // Auth Protection for Topup Sub-pages
+    if (pathname.startsWith("/topup/") && (pathname.includes("/slip") || pathname.includes("/angpao"))) {
+        const token = req.cookies.get("token");
+        if (!token) {
+            const loginUrl = new URL("/login", req.url);
+            loginUrl.searchParams.set("callbackUrl", pathname);
+            return NextResponse.redirect(loginUrl);
+        }
+    }
+
     // Rewrite Logic
     if (isShop) {
         // Rewrite to /shop/...
