@@ -15,7 +15,7 @@ export default function TopupPage() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/settings/payment");
+                const res = await fetch("/api/shop/settings/payment");
                 if (res.ok) {
                     const data = await res.json();
                     setSettings({

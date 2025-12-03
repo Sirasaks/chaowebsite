@@ -185,7 +185,7 @@ export default function AdminCategoriesPage() {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/categories");
+            const res = await fetch("/api/shop/admin/categories");
             if (!res.ok) throw new Error("Failed to fetch categories");
             const data = await res.json();
             setCategories(data.categories);
@@ -242,7 +242,7 @@ export default function AdminCategoriesPage() {
         setSaving(true);
         try {
             const method = isEditing ? "PUT" : "POST";
-            const res = await fetch("/api/admin/categories", {
+            const res = await fetch("/api/shop/admin/categories", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(currentCategory),
@@ -265,7 +265,7 @@ export default function AdminCategoriesPage() {
     const handleToggleStatus = async (category: Category) => {
         try {
             const newStatus = category.is_active === 1 || category.is_active === true ? 0 : 1;
-            const res = await fetch("/api/admin/categories", {
+            const res = await fetch("/api/shop/admin/categories", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

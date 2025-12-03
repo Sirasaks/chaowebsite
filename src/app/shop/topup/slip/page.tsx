@@ -25,7 +25,7 @@ export default function TopupSlipPage() {
     useEffect(() => {
         const fetchBankDetails = async () => {
             try {
-                const res = await fetch("/api/settings/payment");
+                const res = await fetch("/api/shop/settings/payment");
                 if (res.ok) {
                     const data = await res.json();
                     if (data.bank_transfer_enabled === "false") {
@@ -66,7 +66,7 @@ export default function TopupSlipPage() {
         formData.append("file", uploadFile);
 
         try {
-            const res = await fetch("/api/topup/slipok", {
+            const res = await fetch("/api/shop/topup/slipok", {
                 method: "POST",
                 body: formData,
             });

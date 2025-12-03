@@ -37,7 +37,7 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await fetch("/api/profile");
+                const res = await fetch("/api/shop/profile");
                 if (res.ok) {
                     const data = await res.json();
                     setProfile(data);

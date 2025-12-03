@@ -45,8 +45,8 @@ export default function AdminHomePage() {
     const fetchData = async () => {
         try {
             const [catsRes, prodsRes] = await Promise.all([
-                axios.get("/api/admin/categories"),
-                axios.get("/api/admin/products/list")
+                axios.get("/api/shop/admin/categories"),
+                axios.get("/api/shop/admin/products/list")
             ]);
             setCategories(catsRes.data.categories);
             setProducts(prodsRes.data.products);
@@ -62,7 +62,7 @@ export default function AdminHomePage() {
         try {
             // Update all items in parallel
             await Promise.all(updatedItems.map(item =>
-                axios.put("/api/admin/categories", {
+                axios.put("/api/shop/admin/categories", {
                     id: item.id,
                     name: item.name,
                     slug: item.slug,
@@ -85,7 +85,7 @@ export default function AdminHomePage() {
     const handleSaveProducts = async (updatedItems: any[]) => {
         try {
             await Promise.all(updatedItems.map(item =>
-                axios.put("/api/admin/products", {
+                axios.put("/api/shop/admin/products", {
                     id: item.id,
                     is_recommended: item.is_recommended,
                     display_order: item.display_order

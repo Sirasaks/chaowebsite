@@ -36,7 +36,7 @@ export default function SettingsPage() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/auth/change-password", {
+            const res = await fetch("/api/shop/auth/change-password", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

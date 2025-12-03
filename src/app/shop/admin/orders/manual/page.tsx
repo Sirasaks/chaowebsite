@@ -53,7 +53,7 @@ export default function ManualOrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch("/api/admin/orders/manual");
+            const res = await fetch("/api/shop/admin/orders/manual");
             if (res.ok) {
                 const data = await res.json();
                 setOrders(data);

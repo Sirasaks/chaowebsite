@@ -55,7 +55,7 @@ export default function AdminAccountsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/products?type=account");
+            const res = await fetch("/api/shop/admin/products?type=account");
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data.products);
@@ -114,7 +114,7 @@ export default function AdminAccountsPage() {
                 category_id: null, // No category for accounts
             };
 
-            const res = await fetch("/api/admin/products", {
+            const res = await fetch("/api/shop/admin/products", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -141,7 +141,7 @@ export default function AdminAccountsPage() {
         if (!deletingId) return;
 
         try {
-            const res = await fetch(`/api/admin/products?id=${deletingId}`, {
+            const res = await fetch(`/api/shop/admin/products?id=${deletingId}`, {
                 method: "DELETE",
             });
 
@@ -162,7 +162,7 @@ export default function AdminAccountsPage() {
     const handleToggleStatus = async (product: Product) => {
         try {
             const newStatus = !product.is_active;
-            const res = await fetch("/api/admin/products", {
+            const res = await fetch("/api/shop/admin/products", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

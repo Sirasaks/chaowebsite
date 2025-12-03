@@ -21,7 +21,7 @@ export default function TopupAngpaoPage() {
     useEffect(() => {
         const checkEnabled = async () => {
             try {
-                const res = await fetch("/api/settings/payment");
+                const res = await fetch("/api/shop/settings/payment");
                 if (res.ok) {
                     const data = await res.json();
                     if (data.truemoney_angpao_enabled === "false") {
@@ -57,7 +57,7 @@ export default function TopupAngpaoPage() {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/topup/angpao", {
+            const res = await fetch("/api/shop/topup/angpao", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ voucherUrl }),

@@ -33,7 +33,7 @@ export default function SlideshowPage() {
 
     const fetchImages = async () => {
         try {
-            const res = await fetch("/api/slideshow");
+            const res = await fetch("/api/shop/slideshow");
             const data = await res.json();
             setImages(data);
         } catch (error) {
@@ -51,7 +51,7 @@ export default function SlideshowPage() {
         if (!newImageUrl) return;
         setAdding(true);
         try {
-            const res = await fetch("/api/admin/slideshow", {
+            const res = await fetch("/api/shop/admin/slideshow", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ image_url: newImageUrl })
@@ -92,7 +92,7 @@ export default function SlideshowPage() {
         if (!editingImage) return;
         setUpdating(true);
         try {
-            const res = await fetch("/api/admin/slideshow", {
+            const res = await fetch("/api/shop/admin/slideshow", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

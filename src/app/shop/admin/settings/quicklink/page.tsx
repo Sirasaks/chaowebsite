@@ -48,7 +48,7 @@ export default function QuickLinksSettings() {
 
     const fetchLinks = async () => {
         try {
-            const res = await fetch("/api/admin/quick-links");
+            const res = await fetch("/api/shop/admin/quick-links");
             if (res.ok) {
                 const data = await res.json();
                 setLinks(data);
@@ -69,7 +69,7 @@ export default function QuickLinksSettings() {
 
         try {
             const method = currentLink.id ? "PUT" : "POST";
-            const res = await fetch("/api/admin/quick-links", {
+            const res = await fetch("/api/shop/admin/quick-links", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(currentLink),

@@ -54,7 +54,7 @@ export default function AdminFormsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/products?type=form");
+            const res = await fetch("/api/shop/admin/products?type=form");
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data.products);
@@ -111,7 +111,7 @@ export default function AdminFormsPage() {
                 category_id: null, // No category for forms
             };
 
-            const res = await fetch("/api/admin/products", {
+            const res = await fetch("/api/shop/admin/products", {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -159,7 +159,7 @@ export default function AdminFormsPage() {
     const handleToggleStatus = async (product: Product) => {
         try {
             const newStatus = !product.is_active;
-            const res = await fetch("/api/admin/products", {
+            const res = await fetch("/api/shop/admin/products", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

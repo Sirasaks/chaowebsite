@@ -75,7 +75,7 @@ export function ProductPurchaseForm({ product }: { product: Product }) {
 
         setSubmitting(true);
         try {
-            const res = await fetch("/api/orders", {
+            const res = await fetch("/api/shop/orders", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

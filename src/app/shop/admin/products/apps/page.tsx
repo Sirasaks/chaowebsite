@@ -240,7 +240,7 @@ export default function AdminAppsPage() {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/products/list?type=api");
+            const res = await fetch("/api/shop/admin/products/list?type=api");
             if (!res.ok) throw new Error("Failed to fetch products");
             const data = await res.json();
             setProducts(data.products);
@@ -268,7 +268,7 @@ export default function AdminAppsPage() {
     const handleSync = async (provider: 'gafiw') => {
         setSyncing(true);
         try {
-            const endpoint = '/api/admin/gafiw/sync';
+            const endpoint = '/api/shop/admin/gafiw/sync';
             const res = await fetch(endpoint, { method: "POST" });
             const data = await res.json();
 
@@ -297,7 +297,7 @@ export default function AdminAppsPage() {
             // Get all visible product IDs (or all loaded products)
             const productIds = products.map(p => p.id);
 
-            const res = await fetch("/api/admin/products/bulk-update", {
+            const res = await fetch("/api/shop/admin/products/bulk-update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -325,7 +325,7 @@ export default function AdminAppsPage() {
 
         setSavingId(product.id);
         try {
-            const res = await fetch("/api/admin/products/update", {
+            const res = await fetch("/api/shop/admin/products/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -354,7 +354,7 @@ export default function AdminAppsPage() {
         setProducts(products.map(p => p.id === product.id ? { ...p, is_active: newStatus } : p));
 
         try {
-            const res = await fetch("/api/admin/products/toggle-active", {
+            const res = await fetch("/api/shop/admin/products/toggle-active", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
