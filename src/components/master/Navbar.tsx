@@ -77,7 +77,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                         <div className="hidden md:flex items-center space-x-1">
                             <Link href="/"><Button variant="ghost" className={pathname === "/" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><Home className="mr-2 h-4 w-4" />หน้าแรก</Button></Link>
                             <Link href="/topup"><Button variant="ghost" className={pathname?.startsWith("/topup") ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><Wallet className="mr-2 h-4 w-4" />เติมเงิน</Button></Link>
-                            {/* <Link href="/master/packages"><Button variant="ghost" className={pathname === "/master/packages" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ</Button></Link> */}
+                            <Link href="/master/packages"><Button variant="ghost" className={pathname === "/master/packages" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ</Button></Link>
                             {/* <Link href="/master/features"><Button variant="ghost" className={pathname === "/master/features" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><CircleDollarSign className="mr-2 h-4 w-4" />ฟีเจอร์</Button></Link> */}
                             <Link href="/contact"><Button variant="ghost" className={pathname === "/contact" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><PhoneIcon className="mr-2 h-4 w-4" />ติดต่อเรา</Button></Link>
                         </div>
@@ -105,11 +105,11 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <Wallet className="mr-2 h-4 w-4" />เติมเงิน
                                     </Link>
                                 </DropdownMenuItem>
-                                {/* <DropdownMenuItem asChild>
+                                <DropdownMenuItem asChild>
                                     <Link href="/master/packages" className="cursor-pointer">
                                         <ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ
                                     </Link>
-                                </DropdownMenuItem> */}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href="/contact" className="cursor-pointer">
                                         <Mail className="mr-2 h-4 w-4" />ติดต่อเรา
