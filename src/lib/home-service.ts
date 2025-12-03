@@ -2,9 +2,17 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { mergeRealTimeStock, Product } from "@/lib/product-service";
 
-export async function getHomepageData() {
+export async function getHomepageData(shopId?: number) {
     const connection = await pool.getConnection();
     try {
+        // Base WHERE clause
+        const whereShop = shopId ? `WHERE shop_id = ${shopId}` : "";
+        const andShop = shopId ? `AND shop_id = ${shopId}` : "";
+
+        // For stats, we need specific where clauses
+        const whereShopStats = shopId ? `WHERE shop_id = ${shopId}` : "";
+        const andShopStats = shopId ? `AND shop_id = ${shopId}` : "";
+
         const [
             [slideshow],
             [userResult],
@@ -16,17 +24,17 @@ export async function getHomepageData() {
             [products]
         ] = await Promise.all([
             // 1. Fetch Slideshow
-            connection.query<RowDataPacket[]>("SELECT id, image_url, display_order FROM slideshow_images ORDER BY display_order ASC, created_at DESC"),
+            connection.query<RowDataPacket[]>(`SELECT id, image_url, display_order FROM slideshow_images ${whereShop} ORDER BY display_order ASC, created_at DESC`),
             // 2. Fetch Stats
-            connection.query<RowDataPacket[]>("SELECT COUNT(*) as total_users FROM users"),
-            connection.query<RowDataPacket[]>("SELECT COUNT(*) as total_products FROM products"),
-            connection.query<RowDataPacket[]>("SELECT SUM(amount) as total_topup FROM topup_history WHERE status = 'completed'"),
-            connection.query<RowDataPacket[]>("SELECT SUM(quantity) as total_sold FROM orders WHERE status = 'completed'"),
+            connection.query<RowDataPacket[]>(`SELECT COUNT(*) as total_users FROM users ${whereShopStats}`),
+            connection.query<RowDataPacket[]>(`SELECT COUNT(*) as total_products FROM products ${whereShopStats}`),
+            connection.query<RowDataPacket[]>(`SELECT SUM(amount) as total_topup FROM topup_history ${whereShopStats ? whereShopStats + " AND" : "WHERE"} status = 'completed'`),
+            connection.query<RowDataPacket[]>(`SELECT SUM(quantity) as total_sold FROM orders ${whereShopStats ? whereShopStats + " AND" : "WHERE"} status = 'completed'`),
             // 3. Fetch Quick Links
-            connection.query<RowDataPacket[]>("SELECT id, title, image_url, link_url, is_external, display_order FROM quick_links ORDER BY display_order ASC"),
+            connection.query<RowDataPacket[]>(`SELECT id, title, image_url, link_url, is_external, display_order FROM quick_links ${whereShop} ORDER BY display_order ASC`),
             // 4. Fetch Recommended Data
-            connection.query<RowDataPacket[]>("SELECT id, name, slug, image FROM categories WHERE is_recommended = TRUE AND (is_active = 1 OR is_active IS NULL) ORDER BY display_order ASC, created_at DESC"),
-            connection.query<RowDataPacket[]>("SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price FROM products WHERE is_recommended = TRUE AND is_active = 1 ORDER BY display_order ASC, created_at DESC")
+            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image FROM categories WHERE is_recommended = TRUE AND (is_active = 1 OR is_active IS NULL) ${andShop} ORDER BY display_order ASC, created_at DESC`),
+            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price FROM products WHERE is_recommended = TRUE AND is_active = 1 ${andShop} ORDER BY display_order ASC, created_at DESC`)
         ]);
 
         const stats = {

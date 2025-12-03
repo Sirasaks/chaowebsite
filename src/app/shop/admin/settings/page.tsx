@@ -40,7 +40,7 @@ export default function SettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch("/api/settings", { cache: "no-store" });
+            const res = await fetch("/api/shop/settings", { cache: "no-store" });
             if (res.ok) {
                 const data = await res.json();
                 setSettings(data);
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const res = await fetch("/api/admin/settings", {
+            const res = await fetch("/api/shop/admin/settings", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings)

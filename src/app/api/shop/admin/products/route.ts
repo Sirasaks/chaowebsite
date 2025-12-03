@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from "mysql2";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,11 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
 
@@ -47,11 +53,12 @@ export async function GET(request: Request) {
             SELECT p.*, 
             (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
             FROM products p
+            WHERE p.shop_id = ?
         `;
-        const params: any[] = [];
+        const params: any[] = [shopId];
 
         if (type) {
-            query += " WHERE type = ?";
+            query += " AND type = ?";
             params.push(type);
         }
 
@@ -70,6 +77,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
@@ -82,9 +94,10 @@ export async function POST(request: Request) {
         const slug = generateSlug(name) + "-" + Date.now();
 
         const [result] = await connection.query<ResultSetHeader>(
-            `INSERT INTO products (name, slug, price, image, description, type, account, is_recommended, display_order, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO products (shop_id, name, slug, price, image, description, type, account, is_recommended, display_order, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
+                shopId,
                 name,
                 slug,
                 price,
@@ -94,7 +107,7 @@ export async function POST(request: Request) {
                 account || "",
                 is_recommended || false,
                 display_order || 0,
-                is_active !== undefined ? is_active : 1  // Default to active
+                is_active !== undefined ? is_active : 1
             ]
         );
 
@@ -110,6 +123,11 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     if (!await checkAdmin()) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
     }
 
     const connection = await pool.getConnection();
@@ -138,10 +156,16 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "No fields to update" }, { status: 400 });
         }
 
-        const query = `UPDATE products SET ${updates.join(", ")} WHERE id = ?`;
+        // Ensure we only update products belonging to this shop
+        const query = `UPDATE products SET ${updates.join(", ")} WHERE id = ? AND shop_id = ?`;
         params.push(id);
+        params.push(shopId);
 
-        await connection.query(query, params);
+        const [result] = await connection.query<ResultSetHeader>(query, params);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -157,6 +181,11 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -166,7 +195,13 @@ export async function DELETE(request: Request) {
 
     const connection = await pool.getConnection();
     try {
-        await connection.query("DELETE FROM products WHERE id = ?", [id]);
+        // Ensure we only delete products belonging to this shop
+        const [result] = await connection.query<ResultSetHeader>("DELETE FROM products WHERE id = ? AND shop_id = ?", [id, shopId]);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
+        }
+
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("Delete Product Error:", error);

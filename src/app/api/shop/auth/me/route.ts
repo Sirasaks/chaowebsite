@@ -3,9 +3,13 @@ import jwt from "jsonwebtoken";
 import pool from "@/lib/db";
 import { cookies } from "next/headers";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) return NextResponse.json({ user: null });
+
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -14,9 +18,10 @@ export async function GET() {
     const secret = getJwtSecret();
     const decoded = jwt.verify(token, secret) as { userId: number; role?: string };
 
+    // Verify user belongs to this shop
     const [rows] = await pool.query(
-      "SELECT id, username, role, credit FROM users WHERE id = ?",
-      [decoded.userId]
+      "SELECT id, username, role, credit FROM users WHERE id = ? AND shop_id = ?",
+      [decoded.userId, shopId]
     );
 
     const user = (rows as any[])[0];

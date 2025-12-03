@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { buyGafiwProduct } from "@/lib/gafiw-service";
 import { z } from "zod";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 // In-memory cache for request deduplication
 const processedRequests = new Map<string, number>();
@@ -21,6 +22,11 @@ setInterval(() => {
 }, 60000);
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 0. Authenticate User
@@ -78,10 +84,10 @@ export async function POST(request: Request) {
         // Start Transaction
         await connection.beginTransaction();
 
-        // 1. Fetch Product (Lock for Update)
+        // 1. Fetch Product (Lock for Update) - Ensure product belongs to this shop
         const [products] = await connection.query<RowDataPacket[]>(
-            "SELECT * FROM products WHERE id = ? FOR UPDATE",
-            [productId]
+            "SELECT * FROM products WHERE id = ? AND shop_id = ? FOR UPDATE",
+            [productId, shopId]
         );
 
         if (products.length === 0) {
@@ -143,10 +149,10 @@ export async function POST(request: Request) {
 
         const totalPrice = actualPrice * quantity;
 
-        // 2. Check User Credit (Lock for Update)
+        // 2. Check User Credit (Lock for Update) - Ensure user belongs to this shop
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT credit FROM users WHERE id = ? FOR UPDATE",
-            [userId]
+            "SELECT credit FROM users WHERE id = ? AND shop_id = ? FOR UPDATE",
+            [userId, shopId]
         );
 
         if (users.length === 0) {
@@ -229,9 +235,9 @@ export async function POST(request: Request) {
             // Store transaction ID for later verification
             const [insertResult] = await connection.query<ResultSetHeader>(
                 `INSERT INTO orders 
-                (user_id, product_id, price, quantity, data, status, api_transaction_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [userId, productId, actualPrice, quantity, orderData, status, apiTransactionId]
+                (shop_id, user_id, product_id, price, quantity, data, status, api_transaction_id) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [shopId, userId, productId, actualPrice, quantity, orderData, status, apiTransactionId]
             );
 
             const orderId = insertResult.insertId;
@@ -347,8 +353,8 @@ export async function POST(request: Request) {
 
         // 5. Create Order and get ID
         const [result] = await connection.query<ResultSetHeader>(
-            "INSERT INTO orders (user_id, product_id, price, quantity, data, status) VALUES (?, ?, ?, ?, ?, ?)",
-            [userId, productId, actualPrice, quantity, orderData, status]
+            "INSERT INTO orders (shop_id, user_id, product_id, price, quantity, data, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [shopId, userId, productId, actualPrice, quantity, orderData, status]
         );
 
         const orderId = result.insertId;

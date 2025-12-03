@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const [rows] = await connection.query<RowDataPacket[]>(
-            "SELECT * FROM slideshow_images ORDER BY display_order ASC, created_at DESC"
+            "SELECT * FROM slideshow_images WHERE shop_id = ? ORDER BY display_order ASC, created_at DESC",
+            [shopId]
         );
         return NextResponse.json(rows, {
             headers: {

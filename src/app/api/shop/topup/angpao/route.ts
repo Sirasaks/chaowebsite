@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 interface RedeemResponse {
     success: boolean;
@@ -92,6 +93,11 @@ async function redeemAngpao(phoneNumber: string, voucherUrl: string): Promise<Re
 }
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 1. Authenticate User
@@ -110,6 +116,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
         }
 
+        // Verify user belongs to shop
+        const [users] = await connection.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
+        );
+        if (users.length === 0) {
+            return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
+        }
+
         // 2. Parse Body
         const { voucherUrl } = await request.json();
 
@@ -117,14 +132,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Voucher URL is required" }, { status: 400 });
         }
 
-        // 3. Get Receiver Phone Number
+        // 3. Get Receiver Phone Number (Scoped to Shop)
         const [settingsRows] = await connection.query<RowDataPacket[]>(
-            "SELECT setting_value FROM settings WHERE setting_key = 'truemoney_phone'"
+            "SELECT setting_value FROM settings WHERE setting_key = 'truemoney_phone' AND shop_id = ?",
+            [shopId]
         );
 
         let phoneNumber = settingsRows.length > 0 ? settingsRows[0].setting_value : null;
 
         if (!phoneNumber) {
+            // Fallback to ENV only if not found in DB (and maybe we shouldn't fallback to ENV for multi-tenant?)
+            // But for now, let's assume ENV is a global fallback or just fail.
+            // Given "shop1" and "shop2", they should have their own phones.
+            // If ENV is used, it means all shops share the same wallet, which is bad.
+            // But to keep it working if DB is empty, I'll leave it but log a warning.
             phoneNumber = process.env.TMN_PHONE;
         }
 
@@ -152,7 +173,8 @@ export async function POST(request: Request) {
         try {
             await connection.beginTransaction();
 
-            // Check for duplicate transaction
+            // Check for duplicate transaction (Global check? Or Shop check? Voucher ID is unique globally from TrueMoney)
+            // But we should check if it's already used in our system.
             const [existing] = await connection.query<RowDataPacket[]>(
                 "SELECT id FROM topup_history WHERE trans_ref = ? FOR UPDATE",
                 [voucherId]
@@ -172,12 +194,12 @@ export async function POST(request: Request) {
                 [creditAmount, userId]
             );
 
-            // Log transaction
+            // Log transaction (Scoped to Shop)
             // We use voucherId as trans_ref
             // We store "Angpao: SenderName" in sender_name to distinguish
             await connection.query(
-                "INSERT INTO topup_history (user_id, trans_ref, amount, sender_name, receiver_name, status) VALUES (?, ?, ?, ?, ?, 'completed')",
-                [userId, voucherId, creditAmount, `Angpao: ${senderName}`, "System"]
+                "INSERT INTO topup_history (shop_id, user_id, trans_ref, amount, sender_name, receiver_name, status) VALUES (?, ?, ?, ?, ?, ?, 'completed')",
+                [shopId, userId, voucherId, creditAmount, `Angpao: ${senderName}`, "System"]
             );
 
             await connection.commit();

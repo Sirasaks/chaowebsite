@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import bcrypt from "bcrypt";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const { token, newPassword } = await request.json();
@@ -28,12 +34,17 @@ export async function POST(request: Request) {
 
         const email = resets[0].email;
 
-        // 2. Update Password
+        // 2. Update Password (SCOPED TO SHOP)
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await connection.query(
-            "UPDATE users SET password = ? WHERE email = ?",
-            [hashedPassword, email]
+        const [result] = await connection.query(
+            "UPDATE users SET password = ? WHERE email = ? AND shop_id = ?",
+            [hashedPassword, email, shopId]
         );
+
+        // Check if user exists in this shop
+        // If affectedRows is 0, it means the email from the token doesn't exist in this shop.
+        // This could happen if they requested reset on Shop A but clicked link on Shop B (if we didn't fix the link).
+        // But since we fixed the link to use `host`, this should match.
 
         // 3. Delete Token
         await connection.query(

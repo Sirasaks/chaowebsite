@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const shopId = await getShopIdFromRequest(req);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const connection = await pool.getConnection();
 
         try {
@@ -18,9 +24,10 @@ export async function GET() {
                 FROM orders o
                 JOIN users u ON o.user_id = u.id
                 JOIN products p ON o.product_id = p.id
-                WHERE o.status = 'completed'
+                WHERE o.status = 'completed' AND o.shop_id = ?
                 ORDER BY o.created_at DESC
-                LIMIT 10`
+                LIMIT 10`,
+                [shopId]
             );
 
             return NextResponse.json(orders);

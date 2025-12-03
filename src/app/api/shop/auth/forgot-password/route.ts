@@ -3,8 +3,14 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const { email } = await request.json();
@@ -13,10 +19,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
         }
 
-        // 1. Check if user exists
+        // 1. Check if user exists IN THIS SHOP
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM users WHERE email = ?",
-            [email]
+            "SELECT id FROM users WHERE email = ? AND shop_id = ?",
+            [email, shopId]
         );
 
         if (users.length === 0) {
@@ -27,14 +33,32 @@ export async function POST(request: Request) {
         // 2. Generate Token
         const token = crypto.randomBytes(32).toString("hex");
 
-        // 3. Save to DB
+        // 3. Save to DB (password_resets table might need shop_id too? Or just email/token is enough?)
+        // The password_resets table structure is: email, token, created_at.
+        // It doesn't have shop_id.
+        // However, since email + shop_id is unique, and we verified the email exists in this shop...
+        // Wait, if same email exists in Shop A and Shop B.
+        // User requests reset for Shop A.
+        // We insert (email, token).
+        // User clicks link.
+        // Reset API updates password for `email`.
+        // IT WILL UPDATE FOR BOTH SHOPS!
+        // This is a problem. `password_resets` needs `shop_id` OR the reset logic needs to know the shop.
+        // But the reset link is clicked in a browser, likely on the shop's domain.
+        // So the Reset API will know the shop from the domain.
+        // So we just need to ensure the Reset API uses the shop_id from the domain to filter the user update.
+
         await connection.query(
             "INSERT INTO password_resets (email, token) VALUES (?, ?)",
             [email, token]
         );
 
         // 4. Send Email
-        const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password?token=${token}`;
+        // We should probably include the shop domain in the link to ensure they reset on the correct shop.
+        // The `request.headers.get("host")` should give us the shop domain.
+        const host = request.headers.get("host");
+        const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+        const resetLink = `${protocol}://${host}/reset-password?token=${token}`;
 
         try {
             await sendMail({

@@ -6,6 +6,7 @@ import { serialize } from "cookie";
 import { z } from "zod";
 import { getJwtSecret } from "@/lib/env";
 import axios from "axios";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 const registerSchema = z.object({
   username: z.string().min(3),
@@ -36,6 +37,11 @@ async function verifyRecaptcha(token: string | undefined) {
 
 export async function POST(req: Request) {
   try {
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const body = await req.json();
     const { username, email, password, captchaToken } = registerSchema.parse(body);
 
@@ -45,19 +51,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "การยืนยันตัวตนล้มเหลว (reCAPTCHA Failed)" }, { status: 400 });
     }
 
-    // ตรวจสอบ username/email ซ้ำ
+    // ตรวจสอบ username/email ซ้ำ (เฉพาะในร้านนี้)
     const [existing] = await pool.query(
-      "SELECT id FROM users WHERE username = ? OR email = ?",
-      [username, email]
+      "SELECT id FROM users WHERE (username = ? OR email = ?) AND shop_id = ?",
+      [username, email, shopId]
     );
     if ((existing as any[]).length > 0) {
-      return NextResponse.json({ error: "Username หรือ Email ถูกใช้แล้ว" }, { status: 400 });
+      return NextResponse.json({ error: "Username หรือ Email ถูกใช้แล้วในร้านค้านี้" }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
-      "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-      [username, email, hashedPassword, "user"]
+      "INSERT INTO users (shop_id, username, email, password, role) VALUES (?, ?, ?, ?, ?)",
+      [shopId, username, email, hashedPassword, "user"]
     );
 
     const token = jwt.sign(
@@ -76,7 +82,12 @@ export async function POST(req: Request) {
 
     const res = NextResponse.json({
       message: "สมัครสมาชิกสำเร็จ",
-      user: { id: (result as any).insertId, username, role: "user" },
+      user: {
+        id: (result as any).insertId,
+        username,
+        role: "user",
+        shop_id: shopId
+      },
     });
     res.headers.set("Set-Cookie", cookie);
     return res;

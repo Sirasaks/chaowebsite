@@ -265,4 +265,4 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
             </div>
         </nav>
     )
-} 
+}

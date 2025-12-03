@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from "mysql2";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,15 +27,21 @@ async function checkAdmin() {
     }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     if (!await checkAdmin()) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
     }
 
     const connection = await pool.getConnection();
     try {
         const [rows] = await connection.query<RowDataPacket[]>(
-            "SELECT * FROM categories ORDER BY display_order ASC, created_at DESC"
+            "SELECT * FROM categories WHERE shop_id = ? ORDER BY display_order ASC, created_at DESC",
+            [shopId]
         );
         return NextResponse.json({ categories: rows });
     } catch (error) {
@@ -50,6 +57,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
@@ -61,10 +73,10 @@ export async function POST(request: Request) {
 
         const slug = providedSlug || (name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 1000));
 
-        // Check for duplicate slug
+        // Check for duplicate slug in this shop
         const [existing] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM categories WHERE slug = ?",
-            [slug]
+            "SELECT id FROM categories WHERE slug = ? AND shop_id = ?",
+            [slug, shopId]
         );
 
         if (existing.length > 0) {
@@ -72,8 +84,8 @@ export async function POST(request: Request) {
         }
 
         await connection.query<ResultSetHeader>(
-            "INSERT INTO categories (name, slug, image, is_recommended, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?)",
-            [name, slug, image || "", is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1]
+            "INSERT INTO categories (shop_id, name, slug, image, is_recommended, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [shopId, name, slug, image || "", is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1]
         );
 
         return NextResponse.json({ success: true });
@@ -90,6 +102,11 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
@@ -99,20 +116,24 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "ID, Name and Slug are required" }, { status: 400 });
         }
 
-        // Check for duplicate slug (excluding current category)
+        // Check for duplicate slug (excluding current category) in this shop
         const [existing] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM categories WHERE slug = ? AND id != ?",
-            [slug, id]
+            "SELECT id FROM categories WHERE slug = ? AND id != ? AND shop_id = ?",
+            [slug, id, shopId]
         );
 
         if (existing.length > 0) {
             return NextResponse.json({ error: "url นี้มีอยู่แล้ว" }, { status: 400 });
         }
 
-        await connection.query(
-            "UPDATE categories SET name = ?, image = ?, slug = ?, is_recommended = ?, display_order = ?, is_active = ? WHERE id = ?",
-            [name, image || "", slug, is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, id]
+        const [result] = await connection.query<ResultSetHeader>(
+            "UPDATE categories SET name = ?, image = ?, slug = ?, is_recommended = ?, display_order = ?, is_active = ? WHERE id = ? AND shop_id = ?",
+            [name, image || "", slug, is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, id, shopId]
         );
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Category not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -128,6 +149,11 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const { searchParams } = new URL(request.url);
@@ -137,17 +163,22 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
 
-        // Check if category has products
+        // Check if category has products in this shop
+        // Note: Products are already filtered by shop_id, but good to be explicit
         const [products] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM products WHERE category_id = ? LIMIT 1",
-            [id]
+            "SELECT id FROM products WHERE category_id = ? AND shop_id = ? LIMIT 1",
+            [id, shopId]
         );
 
         if (products.length > 0) {
             return NextResponse.json({ error: "Cannot delete category with products" }, { status: 400 });
         }
 
-        await connection.query("DELETE FROM categories WHERE id = ?", [id]);
+        const [result] = await connection.query<ResultSetHeader>("DELETE FROM categories WHERE id = ? AND shop_id = ?", [id, shopId]);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Category not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

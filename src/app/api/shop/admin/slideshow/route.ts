@@ -4,6 +4,7 @@ import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 // Helper to check admin role
 async function checkAdmin() {
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const body = await req.json();
@@ -39,13 +45,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Image URL is required" }, { status: 400 });
         }
 
-        // Get max order
-        const [rows] = await connection.query<any[]>("SELECT MAX(display_order) as maxOrder FROM slideshow_images");
+        // Get max order for this shop
+        const [rows] = await connection.query<any[]>("SELECT MAX(display_order) as maxOrder FROM slideshow_images WHERE shop_id = ?", [shopId]);
         const nextOrder = (rows[0]?.maxOrder || 0) + 1;
 
         await connection.query(
-            "INSERT INTO slideshow_images (image_url, display_order) VALUES (?, ?)",
-            [image_url, nextOrder]
+            "INSERT INTO slideshow_images (shop_id, image_url, display_order) VALUES (?, ?, ?)",
+            [shopId, image_url, nextOrder]
         );
 
         return NextResponse.json({ success: true });
@@ -63,6 +69,11 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const body = await req.json();
@@ -73,11 +84,11 @@ export async function PUT(req: Request) {
         }
 
         if (image_url !== undefined) {
-            await connection.query("UPDATE slideshow_images SET image_url = ? WHERE id = ?", [image_url, id]);
+            await connection.query("UPDATE slideshow_images SET image_url = ? WHERE id = ? AND shop_id = ?", [image_url, id, shopId]);
         }
 
         if (display_order !== undefined) {
-            await connection.query("UPDATE slideshow_images SET display_order = ? WHERE id = ?", [display_order, id]);
+            await connection.query("UPDATE slideshow_images SET display_order = ? WHERE id = ? AND shop_id = ?", [display_order, id, shopId]);
         }
 
         return NextResponse.json({ success: true });
@@ -95,6 +106,11 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         const { searchParams } = new URL(req.url);
@@ -104,7 +120,11 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
 
-        await connection.query("DELETE FROM slideshow_images WHERE id = ?", [id]);
+        const [result] = await connection.query<ResultSetHeader>("DELETE FROM slideshow_images WHERE id = ? AND shop_id = ?", [id, shopId]);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Image not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

@@ -3,11 +3,17 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const shopId = await getShopIdFromRequest(req);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT 
         o.id,
@@ -18,9 +24,10 @@ export async function GET() {
       FROM orders o
       JOIN products p ON o.product_id = p.id
       JOIN users u ON o.user_id = u.id
+      WHERE o.shop_id = ?
       ORDER BY o.created_at DESC
       LIMIT 20
-    `);
+    `, [shopId]);
 
         const recentOrders = rows.map((order) => {
             // Mask username: "Somchai" -> "Som***"

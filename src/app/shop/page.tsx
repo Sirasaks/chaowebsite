@@ -6,10 +6,13 @@ import { RecommendedCategories } from "@/components/shop/home/recommended-catego
 import { RecommendedProducts } from "@/components/shop/home/recommended-products";
 import { getHomepageData } from "@/lib/home-service";
 
+import { getShopIdFromContext } from "@/lib/shop-helper";
+
 export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 
 export default async function page() {
-  const { slideshow, stats, quickLinks, categories, products } = await getHomepageData();
+  const shopId = await getShopIdFromContext();
+  const { slideshow, stats, quickLinks, categories, products } = await getHomepageData(shopId || 0);
 
   return (
     <div className="min-h-screen pb-10">

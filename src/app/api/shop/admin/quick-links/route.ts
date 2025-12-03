@@ -1,9 +1,38 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+// Helper to check admin role
+async function checkAdmin() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) return false;
+
     try {
-        const [rows] = await pool.query("SELECT * FROM quick_links ORDER BY display_order ASC");
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT role FROM users WHERE id = ?",
+            [decoded.userId]
+        );
+        return users.length > 0 && users[0].role === 'owner';
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function GET(req: Request) {
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    try {
+        const [rows] = await pool.query("SELECT * FROM quick_links WHERE shop_id = ? ORDER BY display_order ASC", [shopId]);
         return NextResponse.json(rows);
     } catch (error) {
         console.error("Error fetching quick links:", error);
@@ -12,13 +41,22 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    if (!await checkAdmin()) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     try {
         const body = await req.json();
         const { title, image_url, link_url, is_external, display_order } = body;
 
-        const [result] = await pool.query(
-            "INSERT INTO quick_links (title, image_url, link_url, is_external, display_order) VALUES (?, ?, ?, ?, ?)",
-            [title, image_url, link_url, is_external, display_order || 0]
+        const [result] = await pool.query<ResultSetHeader>(
+            "INSERT INTO quick_links (shop_id, title, image_url, link_url, is_external, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+            [shopId, title, image_url, link_url, is_external, display_order || 0]
         );
 
         // @ts-ignore
@@ -30,14 +68,27 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+    if (!await checkAdmin()) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     try {
         const body = await req.json();
         const { id, title, image_url, link_url, is_external, display_order } = body;
 
-        await pool.query(
-            "UPDATE quick_links SET title = ?, image_url = ?, link_url = ?, is_external = ?, display_order = ? WHERE id = ?",
-            [title, image_url, link_url, is_external, display_order, id]
+        const [result] = await pool.query<ResultSetHeader>(
+            "UPDATE quick_links SET title = ?, image_url = ?, link_url = ?, is_external = ?, display_order = ? WHERE id = ? AND shop_id = ?",
+            [title, image_url, link_url, is_external, display_order, id, shopId]
         );
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Quick link not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -47,6 +98,15 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+    if (!await checkAdmin()) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
@@ -55,7 +115,11 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
 
-        await pool.query("DELETE FROM quick_links WHERE id = ?", [id]);
+        const [result] = await pool.query<ResultSetHeader>("DELETE FROM quick_links WHERE id = ? AND shop_id = ?", [id, shopId]);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "Quick link not found or not authorized" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

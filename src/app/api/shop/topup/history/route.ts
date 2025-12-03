@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // 1. Authenticate User
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -23,6 +29,15 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
         }
 
+        // Verify user belongs to shop
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
+        );
+        if (users.length === 0) {
+            return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
+        }
+
         // 2. Parse Query Params
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get("page") || "1");
@@ -31,8 +46,8 @@ export async function GET(request: Request) {
         const offset = (page - 1) * limit;
 
         // 3. Build Query
-        let query = "SELECT * FROM topup_history WHERE user_id = ?";
-        const queryParams: any[] = [userId];
+        let query = "SELECT * FROM topup_history WHERE user_id = ? AND shop_id = ?";
+        const queryParams: any[] = [userId, shopId];
 
         if (search) {
             query += " AND (trans_ref LIKE ? OR amount LIKE ?)";

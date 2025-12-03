@@ -4,8 +4,14 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 1. Authenticate User
@@ -24,6 +30,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Token ไม่ถูกต้อง" }, { status: 401 });
         }
 
+        // Verify user belongs to shop
+        const [users] = await connection.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
+        );
+        if (users.length === 0) {
+            return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
+        }
+
         // 2. Parse Form Data
         const formData = await request.formData();
         const file = formData.get("file") as File;
@@ -32,9 +47,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "กรุณาอัพโหลดรูปภาพ" }, { status: 400 });
         }
 
-        // 3. Fetch SlipOk settings from database
+        // 3. Fetch SlipOk settings from database (Scoped to Shop)
         const [settingsRows] = await connection.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('slipok_api_key', 'slipok_branch_id')"
+            "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('slipok_api_key', 'slipok_branch_id') AND shop_id = ?",
+            [shopId]
         );
 
         const settings: Record<string, string> = {};
@@ -109,10 +125,10 @@ export async function POST(request: Request) {
             [amount, userId]
         );
 
-        // Record Transaction
+        // Record Transaction (Scoped to Shop)
         await connection.query(
-            "INSERT INTO topup_history (user_id, trans_ref, amount, sender_name, receiver_name) VALUES (?, ?, ?, ?, ?)",
-            [userId, transRef, amount, sender?.displayName || "Unknown", receiver?.displayName || "Unknown"]
+            "INSERT INTO topup_history (shop_id, user_id, trans_ref, amount, sender_name, receiver_name) VALUES (?, ?, ?, ?, ?, ?)",
+            [shopId, userId, transRef, amount, sender?.displayName || "Unknown", receiver?.displayName || "Unknown"]
         );
 
         await connection.commit();

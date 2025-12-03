@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const shopId = await getShopIdFromRequest(req);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // 1. Authenticate User
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -26,14 +32,14 @@ export async function GET() {
         const connection = await pool.getConnection();
 
         try {
-            // 2. Fetch User Info
+            // 2. Fetch User Info (Verify user belongs to shop)
             const [users] = await connection.query<RowDataPacket[]>(
-                "SELECT id, username, email, role, credit, created_at FROM users WHERE id = ?",
-                [userId]
+                "SELECT id, username, email, role, credit, created_at FROM users WHERE id = ? AND shop_id = ?",
+                [userId, shopId]
             );
 
             if (users.length === 0) {
-                return NextResponse.json({ error: "User not found" }, { status: 404 });
+                return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
             }
 
             const user = users[0];
@@ -41,14 +47,14 @@ export async function GET() {
             // 3. Fetch Stats
             // Total Orders & Spent
             const [orderStats] = await connection.query<RowDataPacket[]>(
-                "SELECT COUNT(*) as total_orders, SUM(price * quantity) as total_spent FROM orders WHERE user_id = ?",
-                [userId]
+                "SELECT COUNT(*) as total_orders, SUM(price * quantity) as total_spent FROM orders WHERE user_id = ? AND shop_id = ?",
+                [userId, shopId]
             );
 
             // Total Top-up
             const [topupStats] = await connection.query<RowDataPacket[]>(
-                "SELECT COUNT(*) as total_topups, SUM(amount) as total_topup_amount FROM topup_history WHERE user_id = ? AND status = 'completed'",
-                [userId]
+                "SELECT COUNT(*) as total_topups, SUM(amount) as total_topup_amount FROM topup_history WHERE user_id = ? AND shop_id = ? AND status = 'completed'",
+                [userId, shopId]
             );
 
             // 4. Fetch Recent Activity
@@ -57,15 +63,15 @@ export async function GET() {
                 `SELECT o.id, p.name as product_name, o.price, o.quantity, o.status, o.created_at 
                  FROM orders o 
                  JOIN products p ON o.product_id = p.id 
-                 WHERE o.user_id = ? 
+                 WHERE o.user_id = ? AND o.shop_id = ?
                  ORDER BY o.created_at DESC LIMIT 5`,
-                [userId]
+                [userId, shopId]
             );
 
             // Recent Top-ups
             const [recentTopups] = await connection.query<RowDataPacket[]>(
-                "SELECT id, trans_ref, amount, status, created_at FROM topup_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
-                [userId]
+                "SELECT id, trans_ref, amount, status, created_at FROM topup_history WHERE user_id = ? AND shop_id = ? ORDER BY created_at DESC LIMIT 5",
+                [userId, shopId]
             );
 
             return NextResponse.json({

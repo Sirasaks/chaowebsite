@@ -4,9 +4,15 @@ import { RowDataPacket } from "mysql2";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "10");
@@ -28,13 +34,22 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Invalid token" }, { status: 401 });
         }
 
-        let countQuery = "SELECT COUNT(*) as total FROM orders o JOIN products p ON o.product_id = p.id WHERE o.user_id = ?";
+        // Verify user belongs to shop
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
+        );
+        if (users.length === 0) {
+            return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
+        }
+
+        let countQuery = "SELECT COUNT(*) as total FROM orders o JOIN products p ON o.product_id = p.id WHERE o.user_id = ? AND o.shop_id = ?";
         let dataQuery = `SELECT o.*, p.name as product_name, p.type as product_type, p.image as product_image
        FROM orders o
        JOIN products p ON o.product_id = p.id
-       WHERE o.user_id = ?`;
+       WHERE o.user_id = ? AND o.shop_id = ?`;
 
-        const queryParams: any[] = [userId];
+        const queryParams: any[] = [userId, shopId];
 
         if (search) {
             const searchCondition = " AND p.name LIKE ?";
