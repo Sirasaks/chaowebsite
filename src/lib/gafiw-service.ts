@@ -4,10 +4,11 @@ import { RowDataPacket } from 'mysql2';
 
 const GAFIW_API_URL = 'https://gafiwshop.xyz/api';
 
-async function getGafiwApiKey(): Promise<string> {
+async function getGafiwApiKey(shopId: number): Promise<string> {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_value FROM settings WHERE setting_key = 'gafiw_api_key'"
+            "SELECT setting_value FROM settings WHERE shop_id = ? AND setting_key = 'gafiw_api_key'",
+            [shopId]
         );
         if (rows.length > 0 && rows[0].setting_value) {
             return rows[0].setting_value;
@@ -44,9 +45,9 @@ export interface GafiwBuyResponse {
     error?: string;
 }
 
-export async function getGafiwBalance(): Promise<string> {
+export async function getGafiwBalance(shopId: number): Promise<string> {
     try {
-        const apiKey = await getGafiwApiKey();
+        const apiKey = await getGafiwApiKey(shopId);
         const params = new URLSearchParams();
         params.append('keyapi', apiKey);
 
@@ -82,9 +83,9 @@ export async function getGafiwProducts(): Promise<GafiwProduct[]> {
     }
 }
 
-export async function buyGafiwProduct(typeId: string, usernameBuy?: string): Promise<GafiwBuyResponse> {
+export async function buyGafiwProduct(shopId: number, typeId: string, usernameBuy?: string): Promise<GafiwBuyResponse> {
     try {
-        const apiKey = await getGafiwApiKey();
+        const apiKey = await getGafiwApiKey(shopId);
         const params = new URLSearchParams();
         params.append('keyapi', apiKey);
         params.append('type_id', typeId);
@@ -116,9 +117,9 @@ export async function buyGafiwProduct(typeId: string, usernameBuy?: string): Pro
     }
 }
 
-export async function getGafiwHistory(limit: number | 'all' = 1000): Promise<any[]> {
+export async function getGafiwHistory(shopId: number, limit: number | 'all' = 1000): Promise<any[]> {
     try {
-        const apiKey = await getGafiwApiKey();
+        const apiKey = await getGafiwApiKey(shopId);
         const params = new URLSearchParams();
         params.append('keyapi', apiKey);
         params.append('limit', limit.toString());

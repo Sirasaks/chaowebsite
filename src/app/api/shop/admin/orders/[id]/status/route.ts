@@ -4,12 +4,18 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const { id } = await params;
         const body = await request.json();
         const { status, note } = body;
@@ -42,8 +48,8 @@ export async function PATCH(
 
             // 1. Get current order status and details
             const [orders] = await connection.query<RowDataPacket[]>(
-                "SELECT * FROM orders WHERE id = ? FOR UPDATE",
-                [id]
+                "SELECT * FROM orders WHERE id = ? AND shop_id = ? FOR UPDATE",
+                [id, shopId]
             );
 
             if (orders.length === 0) {
@@ -60,8 +66,8 @@ export async function PATCH(
 
             // 2. Update Status
             await connection.query(
-                "UPDATE orders SET status = ?, note = ? WHERE id = ?",
-                [status, note || null, id]
+                "UPDATE orders SET status = ?, note = ? WHERE id = ? AND shop_id = ?",
+                [status, note || null, id, shopId]
             );
 
             // 3. If Cancelled, Refund Credit

@@ -12,6 +12,7 @@ interface Product {
     type: string;
     stock?: number;
     account?: string;
+    sold?: number;
 }
 
 interface RecommendedProductsProps {

@@ -6,8 +6,14 @@ import { RowDataPacket } from "mysql2";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     // Auth Check
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -41,18 +47,18 @@ export async function POST(request: Request) {
         let syncedCount = 0;
 
         for (const gp of gafiwProducts) {
-            // Check if product exists by api_type_id
+            // Check if product exists by api_type_id AND shop_id
             const [existing] = await connection.query<RowDataPacket[]>(
-                "SELECT id, is_auto_price FROM products WHERE api_type_id = ?",
-                [gp.type_id]
+                "SELECT id, is_auto_price FROM products WHERE api_type_id = ? AND shop_id = ?",
+                [gp.type_id, shopId]
             );
 
             if (existing.length > 0) {
                 // Product already exists - update price and set to auto mode
                 const product = existing[0];
                 await connection.query(
-                    "UPDATE products SET type = 'api', api_provider = 'gafiw', price = ?, is_auto_price = true WHERE id = ?",
-                    [gp.price, product.id]
+                    "UPDATE products SET type = 'api', api_provider = 'gafiw', price = ?, is_auto_price = true WHERE id = ? AND shop_id = ?",
+                    [gp.price, product.id, shopId]
                 );
             } else {
                 // Insert new product
@@ -60,8 +66,8 @@ export async function POST(request: Request) {
 
                 // Insert with API price and auto mode
                 await connection.query(
-                    "INSERT INTO products (name, slug, image, description, price, type, api_type_id, api_provider, is_auto_price) VALUES (?, ?, ?, ?, ?, 'api', ?, 'gafiw', true)",
-                    [gp.name, slug, gp.imageapi, gp.details, gp.price, gp.type_id]
+                    "INSERT INTO products (shop_id, name, slug, image, description, price, type, api_type_id, api_provider, is_auto_price) VALUES (?, ?, ?, ?, ?, ?, 'api', ?, 'gafiw', true)",
+                    [shopId, gp.name, slug, gp.imageapi, gp.details, gp.price, gp.type_id]
                 );
                 syncedCount++;
             }

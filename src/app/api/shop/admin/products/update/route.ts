@@ -5,10 +5,16 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { RowDataPacket } from "mysql2";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     // Auth Check
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -70,8 +76,9 @@ export async function POST(request: Request) {
         }
 
         params.push(productId);
+        params.push(shopId);
 
-        const query = `UPDATE products SET ${fields.join(", ")} WHERE id = ?`;
+        const query = `UPDATE products SET ${fields.join(", ")} WHERE id = ? AND shop_id = ?`;
 
         await connection.query(query, params);
 

@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Authenticate Admin
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -44,9 +50,10 @@ export async function GET() {
                 u.username
             FROM topup_history th
             JOIN users u ON th.user_id = u.id
+            WHERE u.shop_id = ?
             ORDER BY th.created_at DESC
             LIMIT 100
-        `);
+        `, [shopId]);
 
         return NextResponse.json({ history: rows });
     } catch (error: any) {

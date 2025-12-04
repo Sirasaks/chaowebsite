@@ -6,6 +6,7 @@ import { mergeRealTimeStock, Product } from "@/lib/product-service";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,11 @@ export async function GET(
     request: Request,
     context: { params: Promise<{ id: string }> }
 ) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     if (!await checkAdmin()) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -49,7 +55,9 @@ export async function GET(
                 p.id, p.name, p.image, p.price, p.account, 0 as stock, p.type, p.api_type_id, p.api_provider, p.is_auto_price,
                 (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
              FROM products p 
-             ORDER BY p.created_at DESC`
+             WHERE p.shop_id = ?
+             ORDER BY p.created_at DESC`,
+            [shopId]
         );
 
         // Merge กับ real-time data
@@ -63,8 +71,8 @@ export async function GET(
 
         // ดึง product_ids จาก category
         const [categoryRows] = await connection.query<RowDataPacket[]>(
-            "SELECT product_ids FROM categories WHERE id = ?",
-            [categoryId]
+            "SELECT product_ids FROM categories WHERE id = ? AND shop_id = ?",
+            [categoryId, shopId]
         );
 
         const selectedProductIds = new Set(
@@ -105,6 +113,11 @@ export async function POST(
     request: Request,
     context: { params: Promise<{ id: string }> }
 ) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     if (!await checkAdmin()) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -125,8 +138,8 @@ export async function POST(
 
         // บันทึก product_ids เป็น JSON
         await connection.query(
-            "UPDATE categories SET product_ids = ? WHERE id = ?",
-            [JSON.stringify(productIds), categoryId]
+            "UPDATE categories SET product_ids = ? WHERE id = ? AND shop_id = ?",
+            [JSON.stringify(productIds), categoryId, shopId]
         );
 
         return NextResponse.json({ message: "Category products updated successfully" });

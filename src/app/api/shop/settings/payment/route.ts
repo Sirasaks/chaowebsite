@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'bank_transfer_enabled', 'truemoney_angpao_enabled')"
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
+            [shopId]
         );
 
         const settings: Record<string, string> = {};

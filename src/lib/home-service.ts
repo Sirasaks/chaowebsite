@@ -34,7 +34,7 @@ export async function getHomepageData(shopId?: number) {
             connection.query<RowDataPacket[]>(`SELECT id, title, image_url, link_url, is_external, display_order FROM quick_links ${whereShop} ORDER BY display_order ASC`),
             // 4. Fetch Recommended Data
             connection.query<RowDataPacket[]>(`SELECT id, name, slug, image FROM categories WHERE is_recommended = TRUE AND (is_active = 1 OR is_active IS NULL) ${andShop} ORDER BY display_order ASC, created_at DESC`),
-            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price FROM products WHERE is_recommended = TRUE AND is_active = 1 ${andShop} ORDER BY display_order ASC, created_at DESC`)
+            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 ${andShop} ORDER BY display_order ASC, created_at DESC`)
         ]);
 
         const stats = {

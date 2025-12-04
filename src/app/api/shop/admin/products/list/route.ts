@@ -6,10 +6,16 @@ import { mergeRealTimeStock } from "@/lib/product-service";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     // Auth Check
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -37,11 +43,11 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const type = searchParams.get("type");
 
-        let query = `SELECT * FROM products`;
-        const params: any[] = [];
+        let query = `SELECT * FROM products WHERE shop_id = ?`;
+        const params: any[] = [shopId];
 
         if (type) {
-            query += " WHERE type = ?";
+            query += " AND type = ?";
             params.push(type);
         }
 

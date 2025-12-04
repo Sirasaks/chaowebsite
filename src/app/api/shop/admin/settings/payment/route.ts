@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Authenticate Admin
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -24,7 +30,8 @@ export async function GET() {
 
         // Fetch settings
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')"
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
+            [shopId]
         );
 
         const settings: Record<string, string> = {};
@@ -41,6 +48,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // Authenticate Admin
@@ -76,8 +88,8 @@ export async function POST(request: Request) {
         for (const setting of settingsToUpdate) {
             if (setting.value !== undefined) {
                 await connection.query(
-                    "INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-                    [setting.key, setting.value, setting.value]
+                    "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                    [shopId, setting.key, setting.value, setting.value]
                 );
             }
         }

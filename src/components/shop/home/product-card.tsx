@@ -15,6 +15,7 @@ interface Product {
     type: string;
     stock?: number;
     account?: string;
+    sold?: number;
 }
 
 interface ProductCardProps {
@@ -61,7 +62,11 @@ export function ProductCard({ product }: ProductCardProps) {
                     <Link href={`/products/${product.slug}`}>สั่งซื้อสินค้า</Link>
                 </Button>
 
-                <p className="text-center text-xs text-muted-foreground mt-1">เหลือ {count} ชิ้น</p>
+                {product.type === 'form' ? (
+                    <p className="text-center text-xs text-muted-foreground mt-1">ขายไปแล้ว {product.sold || 0} ชิ้น</p>
+                ) : (
+                    <p className="text-center text-xs text-muted-foreground mt-1">เหลือ {count} ชิ้น</p>
+                )}
             </div>
         </div>
     );

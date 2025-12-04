@@ -259,7 +259,7 @@ export async function POST(request: Request) {
                     setTimeout(() => reject(new Error('API_TIMEOUT')), 10000)
                 );
 
-                const apiPromise = buyGafiwProduct(product.api_type_id, formData?.username);
+                const apiPromise = buyGafiwProduct(shopId, product.api_type_id, formData?.username);
 
                 const buyResult = await Promise.race([apiPromise, timeoutPromise]) as any;
 

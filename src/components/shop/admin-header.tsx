@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Search, Menu, User, Settings, LogOut, Wallet, LayoutDashboard, History, User as UserIcon, Loader2 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AdminSidebar } from "./admin-sidebar";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -69,6 +69,7 @@ export function AdminHeader() {
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="p-0 w-72">
+                        <SheetTitle className="hidden">Navigation Menu</SheetTitle>
                         <AdminSidebar />
                     </SheetContent>
                 </Sheet>

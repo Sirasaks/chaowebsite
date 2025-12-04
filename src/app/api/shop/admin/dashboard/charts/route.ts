@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         const { searchParams } = new URL(request.url);
         const range = searchParams.get('range') || 'week';
 
@@ -45,7 +51,7 @@ export async function GET(request: Request) {
 
             if (range === 'year') {
                 // Yearly data (Current Year: Jan - Dec)
-                const commonWhere = "YEAR(created_at) = YEAR(CURDATE())";
+                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND shop_id = ${shopId}`;
 
                 topupQuery = `SELECT DATE_FORMAT(created_at, '%Y-%m') as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE_FORMAT(created_at, '%Y-%m') as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
@@ -71,7 +77,7 @@ export async function GET(request: Request) {
 
             } else if (range === 'month') {
                 // Monthly data (Current Month: Aggregated by Week)
-                const commonWhere = "YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())";
+                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND shop_id = ${shopId}`;
 
                 topupQuery = `SELECT DATE(created_at) as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE(created_at) as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
@@ -105,7 +111,7 @@ export async function GET(request: Request) {
 
             } else {
                 // Default: Weekly (Current Week: Mon - Sun)
-                const commonWhere = "YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)";
+                const commonWhere = `YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) AND shop_id = ${shopId}`;
 
                 topupQuery = `SELECT DATE(created_at) as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE(created_at) as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;

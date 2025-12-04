@@ -69,7 +69,7 @@ function TopupHistoryContent() {
         const fetchHistory = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/topup/history?page=${currentPage}&limit=10&search=${encodeURIComponent(searchQuery)}`);
+                const res = await fetch(`/api/shop/topup/history?page=${currentPage}&limit=10&search=${encodeURIComponent(searchQuery)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setHistory(data.data);

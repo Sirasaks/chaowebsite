@@ -4,9 +4,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Authenticate Admin
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -24,19 +30,22 @@ export async function GET() {
 
         // 1. Total Top-up Amount
         const [topupResult] = await pool.query<RowDataPacket[]>(
-            "SELECT SUM(amount) as total_topup FROM topup_history WHERE status = 'completed'"
+            "SELECT SUM(amount) as total_topup FROM topup_history WHERE status = 'completed' AND shop_id = ?",
+            [shopId]
         );
         const totalTopup = topupResult[0].total_topup || 0;
 
         // 2. Total Users
         const [userResult] = await pool.query<RowDataPacket[]>(
-            "SELECT COUNT(*) as total_users FROM users"
+            "SELECT COUNT(*) as total_users FROM users WHERE shop_id = ?",
+            [shopId]
         );
         const totalUsers = userResult[0].total_users || 0;
 
         // 3. Total Sales
         const [salesResult] = await pool.query<RowDataPacket[]>(
-            "SELECT SUM(price * quantity) as total_sales FROM orders WHERE status = 'completed'"
+            "SELECT SUM(price * quantity) as total_sales FROM orders WHERE status = 'completed' AND shop_id = ?",
+            [shopId]
         );
         const totalSales = salesResult[0].total_sales || 0;
 

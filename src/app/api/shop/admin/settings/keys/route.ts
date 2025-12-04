@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 // Helper function to mask sensitive API keys
 function maskApiKey(key: string | null | undefined): string {
@@ -11,8 +12,13 @@ function maskApiKey(key: string | null | undefined): string {
     return key.substring(0, 3) + "***" + key.substring(key.length - 3);
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Authenticate Admin
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -28,16 +34,21 @@ export async function GET() {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        // Ensure table exists
+        // Ensure table exists (Updated schema to support shop_id)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS settings (
-                setting_key VARCHAR(255) PRIMARY KEY,
+                shop_id INT NOT NULL,
+                setting_key VARCHAR(255) NOT NULL,
                 setting_value TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (shop_id, setting_key)
             )
         `);
 
-        const [rows] = await pool.query<RowDataPacket[]>("SELECT setting_key, setting_value FROM settings");
+        const [rows] = await pool.query<RowDataPacket[]>(
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ?",
+            [shopId]
+        );
 
         const settings: Record<string, string> = {};
         rows.forEach((row) => {
@@ -58,6 +69,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // Authenticate Admin
@@ -90,8 +106,8 @@ export async function POST(request: Request) {
         for (const setting of settingsToUpdate) {
             if (setting.value !== undefined) {
                 await connection.query(
-                    "INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-                    [setting.key, setting.value, setting.value]
+                    "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+                    [shopId, setting.key, setting.value, setting.value]
                 );
             }
         }
