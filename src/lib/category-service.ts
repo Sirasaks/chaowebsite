@@ -10,10 +10,11 @@ export interface Category {
     created_at: Date;
 }
 
-export async function getAllCategories(): Promise<Category[]> {
+export async function getAllCategories(shopId: number): Promise<Category[]> {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT id, name, slug, image, is_active, created_at FROM categories WHERE is_active = 1 OR is_active IS NULL ORDER BY created_at DESC"
+            "SELECT id, name, slug, image, is_active, created_at FROM categories WHERE shop_id = ? AND (is_active = 1 OR is_active IS NULL) ORDER BY created_at DESC",
+            [shopId]
         );
         return rows as Category[];
     } catch (error) {
@@ -22,11 +23,11 @@ export async function getAllCategories(): Promise<Category[]> {
     }
 }
 
-export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+export async function getCategoryBySlug(slug: string, shopId: number): Promise<Category | null> {
     try {
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT id, name, slug, image, is_active, created_at FROM categories WHERE slug = ? AND (is_active = 1 OR is_active IS NULL)",
-            [slug]
+            "SELECT id, name, slug, image, is_active, created_at FROM categories WHERE slug = ? AND shop_id = ? AND (is_active = 1 OR is_active IS NULL)",
+            [slug, shopId]
         );
 
         if (rows.length === 0) {

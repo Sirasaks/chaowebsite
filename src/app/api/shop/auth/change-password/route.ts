@@ -5,8 +5,14 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function POST(request: Request) {
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 1. Authenticate User
@@ -38,12 +44,12 @@ export async function POST(request: Request) {
 
         // 3. Verify Current Password
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT password FROM users WHERE id = ?",
-            [userId]
+            "SELECT password FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
         );
 
         if (users.length === 0) {
-            return NextResponse.json({ error: "ไม่พบผู้ใช้งาน" }, { status: 404 });
+            return NextResponse.json({ error: "ไม่พบผู้ใช้งานในร้านค้านี้" }, { status: 404 });
         }
 
         const user = users[0];
@@ -57,8 +63,8 @@ export async function POST(request: Request) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         await connection.query(
-            "UPDATE users SET password = ? WHERE id = ?",
-            [hashedPassword, userId]
+            "UPDATE users SET password = ? WHERE id = ? AND shop_id = ?",
+            [hashedPassword, userId, shopId]
         );
 
         return NextResponse.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });

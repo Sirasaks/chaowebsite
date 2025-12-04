@@ -75,7 +75,7 @@ export default function SlideshowPage() {
     const handleDelete = async (id: number) => {
         if (!confirm("คุณต้องการลบรูปภาพนี้ใช่หรือไม่?")) return;
         try {
-            const res = await fetch(`/api/admin/slideshow?id=${id}`, {
+            const res = await fetch(`/api/shop/admin/slideshow?id=${id}`, {
                 method: "DELETE"
             });
 

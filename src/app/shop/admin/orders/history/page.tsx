@@ -47,7 +47,7 @@ export default function AdminOrderHistoryPage() {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/admin/orders/history?search=${encodeURIComponent(searchTerm)}`);
+            const res = await fetch(`/api/shop/admin/orders/history?search=${encodeURIComponent(searchTerm)}`);
             if (res.ok) {
                 const data = await res.json();
                 setOrders(data);

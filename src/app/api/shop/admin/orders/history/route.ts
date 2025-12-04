@@ -5,8 +5,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 
+import { getShopIdFromRequest } from "@/lib/shop-helper";
+
 export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Auth Check
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -45,12 +52,13 @@ export async function GET(request: Request) {
                 FROM orders o
                 JOIN users u ON o.user_id = u.id
                 JOIN products p ON o.product_id = p.id
+                WHERE o.shop_id = ?
             `;
 
-            const queryParams: any[] = [];
+            const queryParams: any[] = [shopId];
 
             if (search) {
-                query += ` WHERE u.username LIKE ? OR o.id LIKE ? OR p.name LIKE ?`;
+                query += ` AND (u.username LIKE ? OR o.id LIKE ? OR p.name LIKE ?)`;
                 queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
             }
 

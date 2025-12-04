@@ -110,7 +110,7 @@ function HistoryContent() {
         const fetchHistory = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/history?page=${currentPage}&limit=10&search=${encodeURIComponent(searchQuery)}`);
+                const res = await fetch(`/api/shop/history?page=${currentPage}&limit=10&search=${encodeURIComponent(searchQuery)}`);
 
                 if (res.status === 401) {
                     router.push("/login");

@@ -10,13 +10,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { getShopIdFromContext } from "@/lib/shop-helper";
 import { getAllCategories } from "@/lib/category-service";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 
 export default async function CategoriesPage() {
-  const categories = await getAllCategories();
+  const shopId = await getShopIdFromContext();
+  const categories = await getAllCategories(shopId || 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

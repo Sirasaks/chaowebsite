@@ -33,7 +33,7 @@ export function TopupHistoryTable() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await fetch("/api/admin/topup-history");
+                const res = await fetch("/api/shop/admin/topup-history");
                 if (res.ok) {
                     const data = await res.json();
                     setHistory(data.history || []);

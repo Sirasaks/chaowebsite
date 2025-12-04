@@ -73,7 +73,7 @@ export default function ManualOrdersPage() {
     const handleStatusUpdate = async (id: number, status: 'completed' | 'cancelled', note?: string) => {
         setProcessingId(id);
         try {
-            const res = await fetch(`/api/admin/orders/${id}/status`, {
+            const res = await fetch(`/api/shop/admin/orders/${id}/status`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status, note }),

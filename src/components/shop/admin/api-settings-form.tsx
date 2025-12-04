@@ -20,7 +20,7 @@ export function ApiSettingsForm() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/admin/settings/keys");
+                const res = await fetch("/api/shop/admin/settings/keys");
                 if (res.ok) {
                     const data = await res.json();
                     setFormData({
@@ -50,7 +50,7 @@ export function ApiSettingsForm() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/admin/settings/keys", {
+            const res = await fetch("/api/shop/admin/settings/keys", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

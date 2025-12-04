@@ -92,7 +92,7 @@ export default function QuickLinksSettings() {
         if (!confirm("คุณต้องการลบรายการนี้ใช่หรือไม่?")) return;
 
         try {
-            const res = await fetch(`/api/admin/quick-links?id=${id}`, {
+            const res = await fetch(`/api/shop/admin/quick-links?id=${id}`, {
                 method: "DELETE",
             });
 

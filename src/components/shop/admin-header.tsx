@@ -34,7 +34,7 @@ export function AdminHeader() {
 
     const logout = async () => {
         try {
-            await fetch("/api/auth/logout", { method: "POST" })
+            await fetch("/api/shop/auth/logout", { method: "POST" })
             // Force refresh to clear all states
             window.location.href = "/"
         } catch (err) {

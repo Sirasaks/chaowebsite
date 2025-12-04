@@ -26,7 +26,7 @@ export function PaymentSettingsForm() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const res = await fetch("/api/admin/settings/payment");
+                const res = await fetch("/api/shop/admin/settings/payment");
                 if (res.ok) {
                     const data = await res.json();
                     setSettings({
@@ -58,7 +58,7 @@ export function PaymentSettingsForm() {
         setSaving(true);
 
         try {
-            const res = await fetch("/api/admin/settings/payment", {
+            const res = await fetch("/api/shop/admin/settings/payment", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export function PaymentSettingsForm() {
         setSaving(true);
         try {
             const updatedSettings = { ...settings, [field]: checked };
-            const res = await fetch("/api/admin/settings/payment", {
+            const res = await fetch("/api/shop/admin/settings/payment", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

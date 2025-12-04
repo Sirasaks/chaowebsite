@@ -138,7 +138,7 @@ export default function AdminFormsPage() {
         if (!deletingId) return;
 
         try {
-            const res = await fetch(`/api/admin/products?id=${deletingId}`, {
+            const res = await fetch(`/api/shop/admin/products?id=${deletingId}`, {
                 method: "DELETE",
             });
 

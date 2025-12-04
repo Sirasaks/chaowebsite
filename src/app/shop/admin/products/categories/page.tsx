@@ -63,7 +63,7 @@ const CategoryProductsDialog = ({
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/admin/categories/${category?.id}/products`);
+            const res = await fetch(`/api/shop/admin/categories/${category?.id}/products`);
             if (!res.ok) throw new Error("Failed to fetch products");
             const data = await res.json();
             setProducts(data.products);
@@ -86,7 +86,7 @@ const CategoryProductsDialog = ({
         setSaving(true);
         try {
             const selectedIds = products.filter(p => p.isSelected).map(p => p.id);
-            const res = await fetch(`/api/admin/categories/${category.id}/products`, {
+            const res = await fetch(`/api/shop/admin/categories/${category.id}/products`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ productIds: selectedIds }),
@@ -217,7 +217,7 @@ export default function AdminCategoriesPage() {
         if (!confirm("Are you sure you want to delete this category?")) return;
 
         try {
-            const res = await fetch(`/api/admin/categories?id=${id}`, {
+            const res = await fetch(`/api/shop/admin/categories?id=${id}`, {
                 method: "DELETE",
             });
             const data = await res.json();

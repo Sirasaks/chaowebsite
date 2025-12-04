@@ -5,8 +5,15 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 
-export async function GET() {
+import { getShopIdFromRequest } from "@/lib/shop-helper";
+
+export async function GET(request: Request) {
     try {
+        const shopId = await getShopIdFromRequest(request);
+        if (!shopId) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
         // Auth Check
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
@@ -44,7 +51,9 @@ export async function GET() {
                 JOIN products p ON o.product_id = p.id
                 WHERE o.status = 'pending' 
                 AND p.type = 'form'
-                ORDER BY o.created_at ASC`
+                AND o.shop_id = ?
+                ORDER BY o.created_at ASC`,
+                [shopId]
             );
 
             return NextResponse.json(orders);

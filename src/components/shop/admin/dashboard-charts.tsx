@@ -23,7 +23,7 @@ export function DashboardCharts() {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/admin/dashboard/charts?range=${range}`);
+                const res = await fetch(`/api/shop/admin/dashboard/charts?range=${range}`);
                 if (res.ok) {
                     const chartData = await res.json();
                     setData(chartData);

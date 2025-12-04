@@ -8,7 +8,7 @@ export function useGradientColors() {
     useEffect(() => {
         const fetchColors = async () => {
             try {
-                const res = await fetch("/api/settings");
+                const res = await fetch("/api/shop/settings");
                 if (res.ok) {
                     const data = await res.json();
                     setColors({

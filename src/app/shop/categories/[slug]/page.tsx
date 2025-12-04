@@ -7,6 +7,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { getShopIdFromContext } from "@/lib/shop-helper";
 import { getCategoryBySlug } from "@/lib/category-service";
 import { getProductsByCategoryId, mergeRealTimeStock } from "@/lib/product-service";
 import { notFound } from "next/navigation";
@@ -23,7 +24,8 @@ interface PageProps {
 
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params;
-  const category = await getCategoryBySlug(slug);
+  const shopId = await getShopIdFromContext();
+  const category = await getCategoryBySlug(slug, shopId || 0);
 
   if (!category) {
     notFound();

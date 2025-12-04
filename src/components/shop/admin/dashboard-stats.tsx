@@ -16,7 +16,7 @@ export function DashboardStats() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch("/api/admin/stats");
+                const res = await fetch("/api/shop/admin/stats");
                 if (res.ok) {
                     const data = await res.json();
                     setStats(data);

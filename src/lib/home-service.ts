@@ -6,12 +6,12 @@ export async function getHomepageData(shopId?: number) {
     const connection = await pool.getConnection();
     try {
         // Base WHERE clause
-        const whereShop = shopId ? `WHERE shop_id = ${shopId}` : "";
-        const andShop = shopId ? `AND shop_id = ${shopId}` : "";
+        const whereShop = shopId !== undefined ? `WHERE shop_id = ${shopId}` : "WHERE shop_id = -1"; // Default to no results if undefined to be safe
+        const andShop = shopId !== undefined ? `AND shop_id = ${shopId}` : "AND shop_id = -1";
 
         // For stats, we need specific where clauses
-        const whereShopStats = shopId ? `WHERE shop_id = ${shopId}` : "";
-        const andShopStats = shopId ? `AND shop_id = ${shopId}` : "";
+        const whereShopStats = shopId !== undefined ? `WHERE shop_id = ${shopId}` : "WHERE shop_id = -1";
+        const andShopStats = shopId !== undefined ? `AND shop_id = ${shopId}` : "AND shop_id = -1";
 
         const [
             [slideshow],
