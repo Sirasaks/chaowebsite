@@ -1,27 +1,17 @@
 import pool from "@/lib/db";
 import { headers } from "next/headers";
 
-// Cache for subdomain -> shop_id (Simple in-memory cache, could be Redis in production)
-// Note: In serverless/edge, this cache might reset frequently.
-const shopIdCache: Record<string, number> = {};
-
 export async function getShopIdFromSubdomain(subdomain: string): Promise<number | null> {
     if (!subdomain) return null;
 
-    // Check cache first
-    if (shopIdCache[subdomain]) {
-        return shopIdCache[subdomain];
-    }
-
     try {
         const [rows] = await pool.query(
-            "SELECT id FROM shops WHERE subdomain = ?",
+            "SELECT id FROM shops WHERE subdomain = ? AND is_active = 1",
             [subdomain]
         );
 
         const shop = (rows as any[])[0];
         if (shop) {
-            shopIdCache[subdomain] = shop.id;
             return shop.id;
         }
         return null;

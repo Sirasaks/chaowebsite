@@ -59,7 +59,7 @@ export default async function RootLayout({
             background-clip: text;
           }
           body {
-            background-image: url('${settings.site_background}');
+            background-image: ${settings.site_background ? `url('${settings.site_background}')` : 'none'};
             background-size: cover;
             background-position: center;
             background-attachment: scroll;

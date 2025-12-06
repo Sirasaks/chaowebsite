@@ -94,7 +94,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
                         {/* Mobile Hamburger Menu */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="md:hidden">
+                                <Button variant="ghost" size="icon" className="md:hidden" suppressHydrationWarning>
                                     <Menu className="h-6 w-6" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -141,7 +141,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
                             ) : user ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" suppressHydrationWarning>
                                             <Avatar className="h-10 w-10">
                                                 <AvatarImage src="" alt={user.username} />
                                                 <AvatarFallback className="bg-gradient-primary text-white font-semibold">

@@ -56,12 +56,17 @@ export async function getProductsByCategoryId(categoryId: number): Promise<Produ
     }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
     try {
-        const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT *, api_type_id FROM products WHERE slug = ? AND is_active = 1",
-            [slug]
-        );
+        let query = "SELECT *, api_type_id FROM products WHERE slug = ? AND is_active = 1";
+        const params: any[] = [slug];
+
+        if (shopId) {
+            query += " AND shop_id = ?";
+            params.push(shopId);
+        }
+
+        const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
         if (rows.length === 0) {
             return null;

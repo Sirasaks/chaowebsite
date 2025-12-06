@@ -1,6 +1,4 @@
 import DOMPurify from "isomorphic-dompurify";
-
-
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +19,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getProductBySlug, Product, mergeRealTimeStock } from "@/lib/product-service";
 import { ProductPurchaseForm } from "./purchase-form"; // Separate client component for interactivity
+import { getShopIdFromContext } from "@/lib/shop-helper";
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +49,15 @@ function ProductDescription({ product }: { product: Product }) {
 // -------------------- Main Page --------------------
 export default async function ProductsPage({ params }: PageProps) {
   const { slug } = await params;
-  let product = await getProductBySlug(slug);
+  const shopId = await getShopIdFromContext();
+
+  // Strict Isolation: If we are in a shop route, we MUST have a shopId.
+  // If context resolution fails, we should not default to global search.
+  if (!shopId) {
+    notFound();
+  }
+
+  let product = await getProductBySlug(slug, shopId);
 
   if (product) {
     const merged = await mergeRealTimeStock([product]);

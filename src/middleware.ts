@@ -37,6 +37,14 @@ export async function middleware(req: NextRequest) {
         subdomain = hostname.replace(`.${rootDomain}`, "");
     }
 
+    // Allow spoofing in development for testing
+    if (process.env.NODE_ENV === 'development') {
+        const spoofedSubdomain = req.headers.get('x-shop-subdomain');
+        if (spoofedSubdomain) {
+            subdomain = spoofedSubdomain;
+        }
+    }
+
     console.log("Extracted Subdomain:", subdomain);
 
     // Determine if it's a Shop request or Master request
@@ -70,7 +78,17 @@ export async function middleware(req: NextRequest) {
         // Rewrite to /shop/...
         // e.g. shop1.com/login -> /shop/login
         url.pathname = `/shop${pathname}`;
-        return NextResponse.rewrite(url);
+
+        const requestHeaders = new Headers(req.headers);
+        if (subdomain) {
+            requestHeaders.set('x-shop-subdomain', subdomain);
+        }
+
+        return NextResponse.rewrite(url, {
+            request: {
+                headers: requestHeaders,
+            },
+        });
     } else {
         // Rewrite to /master/...
         // e.g. www.chaoweb.site/ -> /master

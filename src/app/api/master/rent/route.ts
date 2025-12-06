@@ -29,8 +29,14 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { shopName, subdomain, username, password, operationType, packagePrice } = body;
 
-        if (!shopName || !subdomain || !username || !password || !packagePrice) {
-            return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
+        if (!subdomain || !packagePrice) {
+            return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน (Subdomain, PackagePrice)" }, { status: 400 });
+        }
+
+        if (operationType === "new") {
+            if (!shopName || !username || !password) {
+                return NextResponse.json({ error: "กรุณากรอกข้อมูลร้านค้าให้ครบถ้วน" }, { status: 400 });
+            }
         }
 
         // 3. Check Credit
@@ -119,9 +125,15 @@ export async function POST(request: Request) {
 
         // Create Master Order Record
         // Assuming product_id 1 is standard package for now, or we can pass it
+        // Create Master Order Record
+        // Save initial credentials in data field for history reference
+        const orderData = operationType === 'new'
+            ? JSON.stringify({ username, password })
+            : JSON.stringify({ operation: 'renew', renewed_at: new Date() });
+
         await connection.query(
-            "INSERT INTO master_orders (user_id, product_id, amount, status) VALUES (?, ?, ?, 'completed')",
-            [masterUserId, 1, price] // 1 = Starter/Standard (Hardcoded for now as we use dynamic price)
+            "INSERT INTO master_orders (user_id, shop_id, product_id, amount, status, data) VALUES (?, ?, ?, ?, 'completed', ?)",
+            [masterUserId, shopId!, 1, price, orderData]
         );
 
         await connection.commit();

@@ -25,7 +25,20 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [operationType, setOperationType] = useState<"new" | "renew">("new")
+    const [myShops, setMyShops] = useState<any[]>([])
     const router = useRouter()
+
+    // Fetch shops when dialog opens or switch to Renew
+    useState(() => {
+        if (isOpen) {
+            fetch("/api/master/history")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.shops) setMyShops(data.shops)
+                })
+                .catch(err => console.error(err))
+        }
+    })
 
     const handleShopNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value
@@ -37,14 +50,20 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
     }
 
     const handleSubmit = async () => {
-        if (!shopName || !username || !password) {
-            toast.error("กรุณากรอกข้อมูลให้ครบถ้วน")
-            return
-        }
-
-        if (subdomain.length < 3) {
-            toast.error("ชื่อเว็บไซต์ (Subdomain) ต้องมีความยาวอย่างน้อย 3 ตัวอักษร")
-            return
+        if (operationType === "new") {
+            if (!shopName || !username || !password) {
+                toast.error("กรุณากรอกข้อมูลให้ครบถ้วน")
+                return
+            }
+            if (subdomain.length < 3) {
+                toast.error("ชื่อเว็บไซต์ (Subdomain) ต้องมีความยาวอย่างน้อย 3 ตัวอักษร")
+                return
+            }
+        } else {
+            if (!subdomain) {
+                toast.error("กรุณาเลือกร้านค้าที่ต้องการต่ออายุ")
+                return
+            }
         }
 
         if (userCredit < packagePrice) {
@@ -58,10 +77,10 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    shopName,
+                    shopName: operationType === "new" ? shopName : undefined,
                     subdomain,
-                    username,
-                    password,
+                    username: operationType === "new" ? username : undefined,
+                    password: operationType === "new" ? password : undefined,
                     operationType,
                     packagePrice
                 })
@@ -71,7 +90,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
 
             if (res.ok) {
                 setStep("success")
-                toast.success("สร้างเว็บไซต์สำเร็จ!")
+                toast.success(operationType === "new" ? "สร้างเว็บไซต์สำเร็จ!" : "ต่ออายุสำเร็จ!")
             } else {
                 toast.error(data.error || "เกิดข้อผิดพลาด")
             }
@@ -85,8 +104,8 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
 
     const handleClose = () => {
         if (step === "success") {
-            // Refresh page or redirect to dashboard
-            window.location.href = "/master"
+            // Refresh page or redirect to history
+            window.location.href = "/history"
         } else {
             onClose()
         }
@@ -104,28 +123,6 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
 
                 {step === "form" ? (
                     <div className="space-y-6 py-4">
-                        {/* Shop Name / Subdomain */}
-                        <div className="space-y-2">
-                            <Label htmlFor="subdomain">ชื่อเว็บไซต์ (ภาษาอังกฤษ) *</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    id="subdomain"
-                                    placeholder="yourname"
-                                    value={subdomain}
-                                    onChange={(e) => {
-                                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "")
-                                        setSubdomain(val)
-                                        setShopName(val) // Use subdomain as shop name
-                                    }}
-                                    className="font-bold text-blue-600"
-                                />
-                                <span className="text-sm font-bold text-gray-500">.localhost:3000</span>
-                            </div>
-                            <p className="text-xs text-gray-500">
-                                ใช้สำหรับเข้าสู่เว็บไซต์ (เช่น http://yourname.localhost:3000)
-                            </p>
-                        </div>
-
                         {/* Operation Type */}
                         <div className="space-y-2">
                             <Label>ประเภทการดำเนินการ *</Label>
@@ -138,7 +135,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                         <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">NEW</div>
                                     )}
                                     <div className="font-bold mb-1">เช่าใหม่</div>
-                                    <div className="text-xs text-gray-500">สร้างเว็บไซต์ใหม่ (ต้องใช้ชื่อที่ไม่ซ้ำกับที่มีอยู่)</div>
+                                    <div className="text-xs text-gray-500">สร้างเว็บไซต์ใหม่</div>
                                 </div>
 
                                 <div
@@ -151,42 +148,78 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                             </div>
                         </div>
 
-                        {/* Admin User */}
-                        <div className="space-y-2">
-                            <Label htmlFor="username">ผู้ใช้ (Admin) *</Label>
-                            <Input
-                                id="username"
-                                placeholder="กรุณากรอกชื่อผู้ใช้"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                            />
-                        </div>
+                        {operationType === "new" ? (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="subdomain">ชื่อเว็บไซต์ (ภาษาอังกฤษ) *</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="subdomain"
+                                            placeholder="yourname"
+                                            value={subdomain}
+                                            onChange={(e) => {
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "")
+                                                setSubdomain(val)
+                                                setShopName(val)
+                                            }}
+                                            className="font-bold text-blue-600"
+                                        />
+                                        <span className="text-sm font-bold text-gray-500">.localhost:3000</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        ใช้สำหรับเข้าสู่เว็บไซต์
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="username">ผู้ใช้ (Admin) *</Label>
+                                    <Input
+                                        id="username"
+                                        placeholder="กรุณากรอกชื่อผู้ใช้"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">รหัสผ่านผู้ดูแลระบบ *</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="......"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label>เลือกร้านค้าที่ต้องการต่ออายุ *</Label>
+                                {myShops.length > 0 ? (
+                                    <select
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={subdomain}
+                                        onChange={(e) => setSubdomain(e.target.value)}
+                                    >
+                                        <option value="">-- กรุณาเลือก --</option>
+                                        {myShops.map((shop: any) => (
+                                            <option key={shop.id} value={shop.subdomain}>
+                                                {shop.name} ({shop.subdomain}) - หมดอายุ {new Date(shop.expire_date).toLocaleDateString("th-TH")}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <div className="text-red-500 text-sm">ไม่พบร้านค้าที่สามารถต่ออายุได้</div>
+                                )}
+                            </div>
+                        )}
 
-                        {/* Admin Password */}
-                        <div className="space-y-2">
-                            <Label htmlFor="password">รหัสผ่านผู้ดูแลระบบ *</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="......"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                            <p className="text-xs text-gray-500">รหัสผ่านสำหรับเข้าสู่ระบบจัดการเว็บไซต์</p>
-                        </div>
-
-                        {/* Warning Box */}
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                             <div className="flex items-center gap-2 text-yellow-800 font-bold mb-2">
                                 <AlertCircle className="h-5 w-5" />
                                 ข้อมูลสำคัญ
                             </div>
                             <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
-                                <li>ราคาเช่าใหม่: ฿{packagePrice.toFixed(2)} | ราคาต่ออายุ: ฿{packagePrice.toFixed(2)}</li>
-                                <li>เว็บไซต์จะหมดอายุใน 30 วัน</li>
-                                <li>สามารถต่ออายุได้โดยการซื้อใหม่</li>
-                                <li>ข้อมูลจะถูกเข้ารหัสเพื่อความปลอดภัย</li>
-                                <li>ห้ามนำเว็บไซต์ไปใช้ในการฉ้อโกงและผิดกฎหมายต่างๆ หากเราจับได้ จะลบเว็บไซต์ได้อย่างถูกต้อง</li>
+                                <li>ราคา: ฿{packagePrice.toFixed(2)}</li>
+                                <li>อายุการใช้งาน: 30 วัน</li>
                             </ul>
                         </div>
                     </div>
@@ -195,17 +228,16 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                         <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
                             <CheckCircle2 className="h-10 w-10 text-green-600" />
                         </div>
-                        <h3 className="text-2xl font-bold text-green-600">สร้างเว็บไซต์สำเร็จ!</h3>
+                        <h3 className="text-2xl font-bold text-green-600">ดำเนินการสำเร็จ!</h3>
                         <p className="text-gray-600">
-                            เว็บไซต์ของคุณพร้อมใช้งานแล้ว<br />
-                            <a href={`http://${subdomain}.localhost:3000`} target="_blank" className="text-blue-600 font-bold underline hover:text-blue-800">
-                                {subdomain}.localhost:3000
-                            </a>
+                            {operationType === "new" ? "เว็บไซต์ของคุณพร้อมใช้งานแล้ว" : "ต่ออายุเว็บไซต์เรียบร้อยแล้ว"}
                         </p>
-                        <div className="bg-gray-100 p-4 rounded-lg text-left w-full max-w-xs mx-auto mt-4">
-                            <p className="text-sm"><strong>Username:</strong> {username}</p>
-                            <p className="text-sm"><strong>Password:</strong> {password}</p>
-                        </div>
+                        {operationType === "new" && (
+                            <div className="bg-gray-100 p-4 rounded-lg text-left w-full max-w-xs mx-auto mt-4">
+                                <p className="text-sm"><strong>Username:</strong> {username}</p>
+                                <p className="text-sm"><strong>Password:</strong> {password}</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -217,7 +249,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                             </Button>
                             <Button
                                 onClick={handleSubmit}
-                                disabled={loading}
+                                disabled={loading || (operationType === "renew" && !subdomain)}
                                 className="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white"
                             >
                                 {loading ? (
@@ -228,7 +260,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                 ) : (
                                     <>
                                         <CreditCard className="mr-2 h-4 w-4" />
-                                        ซื้อเว็บไซต์ (฿{packagePrice.toFixed(2)})
+                                        {operationType === "new" ? "ซื้อเว็บไซต์" : "ต่ออายุ"} (฿{packagePrice.toFixed(2)})
                                     </>
                                 )}
                             </Button>
