@@ -176,8 +176,8 @@ export async function POST(request: Request) {
             // Check for duplicate transaction (Global check? Or Shop check? Voucher ID is unique globally from TrueMoney)
             // But we should check if it's already used in our system.
             const [existing] = await connection.query<RowDataPacket[]>(
-                "SELECT id FROM topup_history WHERE trans_ref = ? FOR UPDATE",
-                [voucherId]
+                "SELECT id FROM topup_history WHERE trans_ref = ? AND shop_id = ? FOR UPDATE",
+                [voucherId, shopId]
             );
 
             if (existing.length > 0) {
