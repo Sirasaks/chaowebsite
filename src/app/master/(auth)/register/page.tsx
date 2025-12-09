@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -16,12 +16,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useAuth } from "@/context/AuthContext"
+import ReCAPTCHA from "react-google-recaptcha"
 
 export default function MasterRegisterPage() {
     const [email, setEmail] = useState("")
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+    const recaptchaRef = useRef<ReCAPTCHA>(null)
 
     const [isSuccess, setIsSuccess] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,13 +45,18 @@ export default function MasterRegisterPage() {
             return
         }
 
+        if (!captchaToken) {
+            toast.error("กรุณายืนยันว่าคุณไม่ใช่โปรแกรมอัตโนมัติ")
+            return
+        }
+
         setIsSubmitting(true)
 
         try {
             const res = await fetch("/api/master/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, email, password }),
+                body: JSON.stringify({ username, email, password, captchaToken }),
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด")
@@ -61,6 +69,8 @@ export default function MasterRegisterPage() {
         } catch (err: any) {
             toast.error(err.message)
             setIsSuccess(false)
+            recaptchaRef.current?.reset()
+            setCaptchaToken(null)
         } finally {
             setIsSubmitting(false)
         }
@@ -126,6 +136,15 @@ export default function MasterRegisterPage() {
                                     required
                                 />
                             </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-center">
+                            <ReCAPTCHA
+                                ref={recaptchaRef}
+                                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+                                onChange={(token) => setCaptchaToken(token)}
+                                theme="light"
+                            />
                         </div>
 
                         <div className="pt-6">

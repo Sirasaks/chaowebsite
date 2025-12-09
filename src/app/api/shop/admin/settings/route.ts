@@ -9,7 +9,13 @@ import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 
 export async function PUT(req: Request) {
-    // CRITICAL SECURITY FIX: Add authentication check
+    // Get shopId first for security validation
+    const shopId = await getShopIdFromRequest(req);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // CRITICAL SECURITY FIX: Add authentication check with shop scope
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -20,8 +26,8 @@ export async function PUT(req: Request) {
     try {
         const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
         const [users] = await pool.query<RowDataPacket[]>(
-            "SELECT role FROM users WHERE id = ?",
-            [decoded.userId]
+            "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+            [decoded.userId, shopId]
         );
 
         if (users.length === 0 || users[0].role !== 'owner') {
@@ -29,11 +35,6 @@ export async function PUT(req: Request) {
         }
     } catch (err) {
         return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    const shopId = await getShopIdFromRequest(req);
-    if (!shopId) {
-        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
     }
 
     const connection = await pool.getConnection();

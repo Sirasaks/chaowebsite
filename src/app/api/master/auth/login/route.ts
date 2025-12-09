@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
 import { getJwtSecret } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
     login: z.string(),
@@ -13,6 +14,14 @@ const loginSchema = z.object({
 
 export async function POST(req: Request) {
     try {
+        // Rate limiting: 10 attempts per minute
+        const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+        const { success } = rateLimit(`master-login:${ip}`, { limit: 10, windowMs: 60000 });
+
+        if (!success) {
+            return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
+        }
+
         const body = await req.json();
         const { login, password } = loginSchema.parse(body);
 
@@ -26,7 +35,8 @@ export async function POST(req: Request) {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
 
-        const token = jwt.sign({ userId: user.id, role: user.role }, getJwtSecret(), { expiresIn: "7d" });
+        // Token with type scope to separate master/shop
+        const token = jwt.sign({ userId: user.id, role: user.role, tokenType: 'master' }, getJwtSecret(), { expiresIn: "7d" });
 
         const cookie = serialize("token", token, {
             httpOnly: true,

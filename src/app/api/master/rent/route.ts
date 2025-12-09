@@ -6,6 +6,40 @@ import bcrypt from "bcrypt";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 
+// Reserved subdomains that cannot be used
+const RESERVED_SUBDOMAINS = [
+    'admin', 'api', 'www', 'master', 'shop', 'app', 'mail', 'email',
+    'ftp', 'ssh', 'static', 'cdn', 'assets', 'img', 'images', 'media',
+    'help', 'support', 'docs', 'blog', 'status', 'test', 'dev', 'staging',
+    'demo', 'beta', 'alpha', 'login', 'register', 'signup', 'auth',
+    'dashboard', 'panel', 'console', 'root', 'system', 'null', 'undefined'
+];
+
+// Validate subdomain format and reserved words
+function validateSubdomain(subdomain: string): { valid: boolean; error?: string } {
+    // Check minimum length
+    if (subdomain.length < 3) {
+        return { valid: false, error: "Subdomain ต้องมีความยาวอย่างน้อย 3 ตัวอักษร" };
+    }
+
+    // Check maximum length
+    if (subdomain.length > 50) {
+        return { valid: false, error: "Subdomain ต้องมีความยาวไม่เกิน 50 ตัวอักษร" };
+    }
+
+    // Check format (only lowercase letters and numbers)
+    if (!/^[a-z0-9]+$/.test(subdomain)) {
+        return { valid: false, error: "Subdomain ต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์เล็กและตัวเลขเท่านั้น" };
+    }
+
+    // Check reserved words
+    if (RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase())) {
+        return { valid: false, error: "ไม่สามารถใช้ชื่อเว็บไซต์นี้ได้ (Reserved)" };
+    }
+
+    return { valid: true };
+}
+
 export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
@@ -19,7 +53,14 @@ export async function POST(request: Request) {
 
         let masterUserId: number;
         try {
-            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; tokenType?: string };
+
+            // Verify token scope (backward compatible: allow legacy tokens without tokenType)
+            // Only reject if tokenType exists AND is not 'master'
+            if (decoded.tokenType && decoded.tokenType !== 'master') {
+                return NextResponse.json({ error: "Token ไม่ถูกต้อง (Invalid scope)" }, { status: 401 });
+            }
+
             masterUserId = decoded.userId;
         } catch (err) {
             return NextResponse.json({ error: "Token ไม่ถูกต้อง" }, { status: 401 });
@@ -31,6 +72,12 @@ export async function POST(request: Request) {
 
         if (!subdomain || !packagePrice) {
             return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน (Subdomain, PackagePrice)" }, { status: 400 });
+        }
+
+        // 3. Validate Subdomain Format
+        const subdomainValidation = validateSubdomain(subdomain);
+        if (!subdomainValidation.valid) {
+            return NextResponse.json({ error: subdomainValidation.error }, { status: 400 });
         }
 
         if (operationType === "new") {

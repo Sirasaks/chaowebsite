@@ -73,8 +73,8 @@ export async function PATCH(
             // 3. If Cancelled, Refund Credit
             if (status === 'cancelled') {
                 await connection.query(
-                    "UPDATE users SET credit = credit + ? WHERE id = ?",
-                    [order.price * order.quantity, order.user_id]
+                    "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+                    [order.price * order.quantity, order.user_id, shopId]
                 );
             }
 

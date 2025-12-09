@@ -16,8 +16,8 @@ function generateSlug(name: string) {
         .replace(/[^\w-]+/g, "");
 }
 
-// Helper to check admin role
-async function checkAdmin() {
+// Helper to check admin role with shop scope - SECURITY FIX
+async function checkAdmin(shopId: number): Promise<boolean> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -26,8 +26,8 @@ async function checkAdmin() {
     try {
         const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
         const [users] = await pool.query<RowDataPacket[]>(
-            "SELECT role FROM users WHERE id = ?",
-            [decoded.userId]
+            "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+            [decoded.userId, shopId]
         );
         return users.length > 0 && users[0].role === 'owner';
     } catch (error) {
@@ -36,13 +36,13 @@ async function checkAdmin() {
 }
 
 export async function GET(request: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -73,13 +73,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const connection = await pool.getConnection();
@@ -121,13 +121,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const connection = await pool.getConnection();
@@ -177,13 +177,13 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

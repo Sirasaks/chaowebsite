@@ -36,8 +36,8 @@ export async function GET(request: Request) {
         try {
             // Verify admin/owner role
             const [users] = await connection.query<RowDataPacket[]>(
-                "SELECT role FROM users WHERE id = ?",
-                [decoded.userId]
+                "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+                [decoded.userId, shopId]
             );
 
             if (users.length === 0 || users[0].role !== 'owner') {
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
             if (range === 'year') {
                 // Yearly data (Current Year: Jan - Dec)
-                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND shop_id = ${shopId}`;
+                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND shop_id = ?`;
 
                 topupQuery = `SELECT DATE_FORMAT(created_at, '%Y-%m') as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE_FORMAT(created_at, '%Y-%m') as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
             } else if (range === 'month') {
                 // Monthly data (Current Month: Aggregated by Week)
-                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND shop_id = ${shopId}`;
+                const commonWhere = `YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND shop_id = ?`;
 
                 topupQuery = `SELECT DATE(created_at) as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE(created_at) as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
@@ -111,7 +111,7 @@ export async function GET(request: Request) {
 
             } else {
                 // Default: Weekly (Current Week: Mon - Sun)
-                const commonWhere = `YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) AND shop_id = ${shopId}`;
+                const commonWhere = `YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) AND shop_id = ?`;
 
                 topupQuery = `SELECT DATE(created_at) as label, SUM(amount) as total FROM topup_history WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
                 salesQuery = `SELECT DATE(created_at) as label, SUM(price * quantity) as total FROM orders WHERE ${commonWhere} AND status = 'completed' GROUP BY label ORDER BY label ASC`;
@@ -147,9 +147,9 @@ export async function GET(request: Request) {
                 };
             }
 
-            const [topupData] = await connection.query<RowDataPacket[]>(topupQuery);
-            const [salesData] = await connection.query<RowDataPacket[]>(salesQuery);
-            const [userData] = await connection.query<RowDataPacket[]>(userQuery);
+            const [topupData] = await connection.query<RowDataPacket[]>(topupQuery, [shopId]);
+            const [salesData] = await connection.query<RowDataPacket[]>(salesQuery, [shopId]);
+            const [userData] = await connection.query<RowDataPacket[]>(userQuery, [shopId]);
 
             return NextResponse.json({
                 topup: formatData(topupData, 'total'),

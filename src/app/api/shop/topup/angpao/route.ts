@@ -190,8 +190,8 @@ export async function POST(request: Request) {
 
             // Update user credit
             await connection.query(
-                "UPDATE users SET credit = credit + ? WHERE id = ?",
-                [creditAmount, userId]
+                "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+                [creditAmount, userId, shopId]
             );
 
             // Log transaction (Scoped to Shop)

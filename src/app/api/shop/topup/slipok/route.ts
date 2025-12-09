@@ -107,8 +107,8 @@ export async function POST(request: Request) {
 
         // Check for duplicate transaction in OUR database
         const [existing] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM topup_history WHERE trans_ref = ? FOR UPDATE",
-            [transRef]
+            "SELECT id FROM topup_history WHERE trans_ref = ? AND shop_id = ? FOR UPDATE",
+            [transRef, shopId]
         );
 
         if (existing.length > 0) {
@@ -121,8 +121,8 @@ export async function POST(request: Request) {
 
         // Update User Credit
         await connection.query(
-            "UPDATE users SET credit = credit + ? WHERE id = ?",
-            [amount, userId]
+            "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+            [amount, userId, shopId]
         );
 
         // Record Transaction (Scoped to Shop)

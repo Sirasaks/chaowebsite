@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, getJwtSecret(), { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id, role: user.role, tokenType: 'shop' }, getJwtSecret(), { expiresIn: "7d" });
 
     const cookie = serialize("token", token, {
       httpOnly: true,

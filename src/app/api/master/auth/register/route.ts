@@ -5,17 +5,54 @@ import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
 import { getJwtSecret } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
+import axios from "axios";
 
 const registerSchema = z.object({
     username: z.string().min(3),
     email: z.string().email(),
     password: z.string().min(8),
+    captchaToken: z.string().optional(),
 });
+
+async function verifyRecaptcha(token: string | undefined) {
+    if (!token) return false;
+
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secretKey) {
+        console.warn("RECAPTCHA_SECRET_KEY is not set, skipping verification");
+        return true; // Allow if config is missing (dev mode fallback)
+    }
+
+    try {
+        const response = await axios.post(
+            `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`
+        );
+        return response.data.success;
+    } catch (error) {
+        console.error("Recaptcha verification failed:", error);
+        return false;
+    }
+}
 
 export async function POST(req: Request) {
     try {
+        // Rate limiting: 5 registrations per minute per IP
+        const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+        const { success } = rateLimit(`master-register:${ip}`, { limit: 5, windowMs: 60000 });
+
+        if (!success) {
+            return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
+        }
+
         const body = await req.json();
-        const { username, email, password } = registerSchema.parse(body);
+        const { username, email, password, captchaToken } = registerSchema.parse(body);
+
+        // Verify Captcha
+        const isCaptchaValid = await verifyRecaptcha(captchaToken);
+        if (!isCaptchaValid) {
+            return NextResponse.json({ error: "การยืนยันตัวตนล้มเหลว (reCAPTCHA Failed)" }, { status: 400 });
+        }
 
         // 1. Check if Master User exists
         const [existingUser] = await pool.query(
@@ -34,9 +71,9 @@ export async function POST(req: Request) {
         );
         const userId = (userResult as any).insertId;
 
-        // 3. Generate Token
+        // 3. Generate Token with scope
         const token = jwt.sign(
-            { userId: userId, role: "user" },
+            { userId: userId, role: "user", tokenType: 'master' },
             getJwtSecret(),
             { expiresIn: "7d" }
         );

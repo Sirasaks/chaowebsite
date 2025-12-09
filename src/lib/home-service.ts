@@ -5,13 +5,8 @@ import { mergeRealTimeStock, Product } from "@/lib/product-service";
 export async function getHomepageData(shopId?: number) {
     const connection = await pool.getConnection();
     try {
-        // Base WHERE clause
-        const whereShop = shopId !== undefined ? `WHERE shop_id = ${shopId}` : "WHERE shop_id = -1"; // Default to no results if undefined to be safe
-        const andShop = shopId !== undefined ? `AND shop_id = ${shopId}` : "AND shop_id = -1";
-
-        // For stats, we need specific where clauses
-        const whereShopStats = shopId !== undefined ? `WHERE shop_id = ${shopId}` : "WHERE shop_id = -1";
-        const andShopStats = shopId !== undefined ? `AND shop_id = ${shopId}` : "AND shop_id = -1";
+        // Use parameterized queries to prevent SQL injection
+        const safeShopId = shopId ?? -1; // Default to -1 if undefined (no results)
 
         const [
             [slideshow],
@@ -24,17 +19,41 @@ export async function getHomepageData(shopId?: number) {
             [products]
         ] = await Promise.all([
             // 1. Fetch Slideshow
-            connection.query<RowDataPacket[]>(`SELECT id, image_url, display_order FROM slideshow_images ${whereShop} ORDER BY display_order ASC, created_at DESC`),
+            connection.query<RowDataPacket[]>(
+                "SELECT id, image_url, display_order FROM slideshow_images WHERE shop_id = ? ORDER BY display_order ASC, created_at DESC",
+                [safeShopId]
+            ),
             // 2. Fetch Stats
-            connection.query<RowDataPacket[]>(`SELECT COUNT(*) as total_users FROM users ${whereShopStats}`),
-            connection.query<RowDataPacket[]>(`SELECT COUNT(*) as total_products FROM products ${whereShopStats}`),
-            connection.query<RowDataPacket[]>(`SELECT SUM(amount) as total_topup FROM topup_history ${whereShopStats ? whereShopStats + " AND" : "WHERE"} status = 'completed'`),
-            connection.query<RowDataPacket[]>(`SELECT SUM(quantity) as total_sold FROM orders ${whereShopStats ? whereShopStats + " AND" : "WHERE"} status = 'completed'`),
+            connection.query<RowDataPacket[]>(
+                "SELECT COUNT(*) as total_users FROM users WHERE shop_id = ?",
+                [safeShopId]
+            ),
+            connection.query<RowDataPacket[]>(
+                "SELECT COUNT(*) as total_products FROM products WHERE shop_id = ?",
+                [safeShopId]
+            ),
+            connection.query<RowDataPacket[]>(
+                "SELECT SUM(amount) as total_topup FROM topup_history WHERE shop_id = ? AND status = 'completed'",
+                [safeShopId]
+            ),
+            connection.query<RowDataPacket[]>(
+                "SELECT SUM(quantity) as total_sold FROM orders WHERE shop_id = ? AND status = 'completed'",
+                [safeShopId]
+            ),
             // 3. Fetch Quick Links
-            connection.query<RowDataPacket[]>(`SELECT id, title, image_url, link_url, is_external, display_order FROM quick_links ${whereShop} ORDER BY display_order ASC`),
+            connection.query<RowDataPacket[]>(
+                "SELECT id, title, image_url, link_url, is_external, display_order FROM quick_links WHERE shop_id = ? ORDER BY display_order ASC",
+                [safeShopId]
+            ),
             // 4. Fetch Recommended Data
-            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image FROM categories WHERE is_recommended = TRUE AND (is_active = 1 OR is_active IS NULL) ${andShop} ORDER BY display_order ASC, created_at DESC`),
-            connection.query<RowDataPacket[]>(`SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 ${andShop} ORDER BY display_order ASC, created_at DESC`)
+            connection.query<RowDataPacket[]>(
+                "SELECT id, name, slug, image FROM categories WHERE is_recommended = TRUE AND (is_active = 1 OR is_active IS NULL) AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
+                [safeShopId]
+            ),
+            connection.query<RowDataPacket[]>(
+                "SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
+                [safeShopId]
+            )
         ]);
 
         const stats = {

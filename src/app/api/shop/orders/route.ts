@@ -196,8 +196,8 @@ export async function POST(request: Request) {
 
             // Update product stock
             await connection.query(
-                "UPDATE products SET account = ? WHERE id = ?",
-                [remainingAccounts.join("\n"), productId]
+                "UPDATE products SET account = ? WHERE id = ? AND shop_id = ?",
+                [remainingAccounts.join("\n"), productId, shopId]
             );
         } else if (product.type === "form") {
             if (!formData) {
@@ -244,8 +244,8 @@ export async function POST(request: Request) {
 
             // Deduct Credit for API product
             await connection.query(
-                "UPDATE users SET credit = credit - ? WHERE id = ?",
-                [totalPrice, userId]
+                "UPDATE users SET credit = credit - ? WHERE id = ? AND shop_id = ?",
+                [totalPrice, userId, shopId]
             );
 
             // Commit transaction BEFORE calling external API
@@ -266,14 +266,14 @@ export async function POST(request: Request) {
                 if (!buyResult.ok) {
                     // API failed - delete order and refund
                     await pool.query(
-                        "DELETE FROM orders WHERE id = ?",
-                        [orderId]
+                        "DELETE FROM orders WHERE id = ? AND shop_id = ?",
+                        [orderId, shopId]
                     );
 
                     // Refund credit
                     await pool.query(
-                        "UPDATE users SET credit = credit + ? WHERE id = ?",
-                        [totalPrice, userId]
+                        "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+                        [totalPrice, userId, shopId]
                     );
 
                     return NextResponse.json(
@@ -290,8 +290,8 @@ export async function POST(request: Request) {
                     `UPDATE orders 
                     SET status = 'completed', 
                         data = ? 
-                    WHERE id = ?`,
-                    [JSON.stringify(buyResult.data), orderId]
+                    WHERE id = ? AND shop_id = ?`,
+                    [JSON.stringify(buyResult.data), orderId, shopId]
                 );
 
                 return NextResponse.json({
@@ -309,8 +309,8 @@ export async function POST(request: Request) {
                         `UPDATE orders 
                         SET retry_count = retry_count + 1,
                             last_error = 'API Timeout' 
-                        WHERE id = ?`,
-                        [orderId]
+                        WHERE id = ? AND shop_id = ?`,
+                        [orderId, shopId]
                     );
 
                     return NextResponse.json(
@@ -326,13 +326,13 @@ export async function POST(request: Request) {
 
                 // Other API errors - delete order and refund
                 await pool.query(
-                    "DELETE FROM orders WHERE id = ?",
-                    [orderId]
+                    "DELETE FROM orders WHERE id = ? AND shop_id = ?",
+                    [orderId, shopId]
                 );
 
                 await pool.query(
-                    "UPDATE users SET credit = credit + ? WHERE id = ?",
-                    [totalPrice, userId]
+                    "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+                    [totalPrice, userId, shopId]
                 );
 
                 return NextResponse.json(
@@ -347,8 +347,8 @@ export async function POST(request: Request) {
 
         // 4. Deduct Credit
         await connection.query(
-            "UPDATE users SET credit = credit - ? WHERE id = ?",
-            [totalPrice, userId]
+            "UPDATE users SET credit = credit - ? WHERE id = ? AND shop_id = ?",
+            [totalPrice, userId, shopId]
         );
 
         // 5. Create Order and get ID

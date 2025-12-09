@@ -6,8 +6,8 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 
-// Helper to check admin role
-async function checkAdmin() {
+// Helper to check admin role with shop scope - SECURITY FIX
+async function checkAdmin(shopId: number): Promise<boolean> {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -16,8 +16,8 @@ async function checkAdmin() {
     try {
         const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
         const [users] = await pool.query<RowDataPacket[]>(
-            "SELECT role FROM users WHERE id = ?",
-            [decoded.userId]
+            "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+            [decoded.userId, shopId]
         );
         return users.length > 0 && users[0].role === 'owner';
     } catch (error) {
@@ -27,13 +27,13 @@ async function checkAdmin() {
 
 // Add new image
 export async function POST(req: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(req);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const connection = await pool.getConnection();
@@ -65,13 +65,13 @@ export async function POST(req: Request) {
 
 // Update image (order or url)
 export async function PUT(req: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(req);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const connection = await pool.getConnection();
@@ -102,13 +102,13 @@ export async function PUT(req: Request) {
 
 // Delete image
 export async function DELETE(req: Request) {
-    if (!await checkAdmin()) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const shopId = await getShopIdFromRequest(req);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    if (!await checkAdmin(shopId)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const connection = await pool.getConnection();
