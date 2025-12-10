@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
-import { mergeRealTimeStock } from "@/lib/product-service";
+
 
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
@@ -55,11 +55,8 @@ export async function GET(request: Request) {
 
         const [rows] = await connection.query<RowDataPacket[]>(query, params);
 
-        // Always merge with real-time data
-        // mergeRealTimeStock will respect is_auto_price:
-        // - Auto mode (is_auto_price=true): uses API price
-        // - Custom mode (is_auto_price=false): uses DB price
-        const products = await mergeRealTimeStock(rows as any[]);
+        // mergeRealTimeStock removed
+        const products = rows;
 
         return NextResponse.json({ products });
 

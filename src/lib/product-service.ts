@@ -10,12 +10,9 @@ export interface Product {
     account: string;
     created_at: Date;
     slug: string;
-    type: 'account' | 'form' | 'api';
+    type: 'account' | 'form';
     // category_id removed as we use Many-to-Many
     stock?: number; // Stock is now optional/virtual
-    api_type_id?: string;
-    is_auto_price?: boolean;
-    cost_price?: string;
     is_active?: boolean | number; // Database returns 0/1 as number, but can be boolean
     sold?: number;
 }
@@ -40,7 +37,7 @@ export async function getProductsByCategoryId(categoryId: number): Promise<Produ
 
         // ดึงสินค้าที่อยู่ใน product_ids และเปิดใช้งาน
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT p.*, p.api_type_id,
+            `SELECT p.*,
              (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
              FROM products p
              WHERE p.id IN (?) AND p.is_active = 1
@@ -58,7 +55,7 @@ export async function getProductsByCategoryId(categoryId: number): Promise<Produ
 
 export async function getProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
     try {
-        let query = "SELECT *, api_type_id FROM products WHERE slug = ? AND is_active = 1";
+        let query = "SELECT * FROM products WHERE slug = ? AND is_active = 1";
         const params: any[] = [slug];
 
         if (shopId) {
@@ -80,59 +77,4 @@ export async function getProductBySlug(slug: string, shopId?: number): Promise<P
     }
 }
 
-import { getGafiwProducts } from "./gafiw-service";
 
-export async function mergeRealTimeStock(products: Product[]): Promise<Product[]> {
-    try {
-        // 1. Check if we have any API products in the list
-        const apiProducts = products.filter(p => p.type === 'api');
-        if (apiProducts.length === 0) {
-            return products;
-        }
-
-        // 2. Identify which providers we need to fetch from
-        // We cast to any because api_provider might not be in the interface yet if not updated, 
-        // but at runtime it will be there from the DB query "SELECT *, api_type_id FROM products"
-        // Wait, the SELECT query in getProductsByCategoryId needs to include api_provider if it's not *
-        // The query is "SELECT *, api_type_id FROM products", so it includes all columns.
-        const hasGafiw = apiProducts.some(p => (p as any).api_provider === 'gafiw' || !(p as any).api_provider);
-
-        let gafiwMap = new Map();
-
-        // 3. Fetch fresh data from APIs in parallel if needed
-        const promises = [];
-        if (hasGafiw) promises.push(getGafiwProducts().then(data => ({ provider: 'gafiw', data })));
-
-        const results = await Promise.all(promises);
-
-        for (const res of results) {
-            if (res.provider === 'gafiw') {
-                gafiwMap = new Map(res.data.map((g: any) => [g.type_id, g]));
-            }
-        }
-
-        // 4. Merge data
-        return products.map(p => {
-            const provider = (p as any).api_provider || 'gafiw';
-
-            if (p.type === 'api' && (p as any).api_type_id) {
-                if (provider === 'gafiw') {
-                    const apiProduct = gafiwMap.get((p as any).api_type_id);
-                    if (apiProduct) {
-                        return {
-                            ...p,
-                            stock: parseInt(apiProduct.stock) || 0,
-                            cost_price: apiProduct.pricevip,
-                            price: p.is_auto_price ? apiProduct.price : p.price,
-                        };
-                    }
-                }
-            }
-            return p;
-        });
-
-    } catch (error) {
-        console.error("Error merging real-time stock:", error);
-        return products;
-    }
-}

@@ -58,10 +58,7 @@ export async function POST(request: Request) {
             params.push(updates.category_id);
         }
 
-        if (updates.is_auto_price !== undefined) {
-            fields.push("is_auto_price = ?");
-            params.push(updates.is_auto_price);
-        }
+
 
         if (updates.price !== undefined) {
             fields.push("price = ?");

@@ -17,7 +17,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getProductBySlug, Product, mergeRealTimeStock } from "@/lib/product-service";
+import { getProductBySlug, Product } from "@/lib/product-service";
 import { ProductPurchaseForm } from "./purchase-form"; // Separate client component for interactivity
 import { getShopIdFromContext } from "@/lib/shop-helper";
 
@@ -60,8 +60,7 @@ export default async function ProductsPage({ params }: PageProps) {
   let product = await getProductBySlug(slug, shopId);
 
   if (product) {
-    const merged = await mergeRealTimeStock([product]);
-    product = merged[0];
+    product = { ...product, stock: 0 };
   }
 
   if (!product) {

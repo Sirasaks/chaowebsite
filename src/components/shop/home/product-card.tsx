@@ -63,9 +63,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 </Button>
 
                 {product.type === 'form' ? (
-                    <p className="text-center text-xs text-muted-foreground mt-1">ขายไปแล้ว {product.sold || 0} ชิ้น</p>
+                    <p className="text-center text-xs text-muted-foreground mt-3">ขายไปแล้ว {product.sold || 0} ชิ้น</p>
                 ) : (
-                    <p className="text-center text-xs text-muted-foreground mt-1">เหลือ {count} ชิ้น</p>
+                    <p className="text-center text-xs text-muted-foreground mt-3">เหลือ {count} ชิ้น</p>
                 )}
             </div>
         </div>

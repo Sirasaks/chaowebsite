@@ -91,7 +91,26 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        const slug = generateSlug(name) + "-" + Date.now();
+        let slug = generateSlug(name);
+
+        // Ensure slug is unique for this shop
+        let counter = 1;
+        let originalSlug = slug;
+
+        while (true) {
+            const [existing] = await connection.query<RowDataPacket[]>(
+                "SELECT id FROM products WHERE slug = ? AND shop_id = ?",
+                [slug, shopId]
+            );
+
+            if (existing.length === 0) {
+                break; // Slug is unique
+            }
+
+            // Slug exists, append counter
+            slug = `${originalSlug}-${counter}`;
+            counter++;
+        }
 
         const [result] = await connection.query<ResultSetHeader>(
             `INSERT INTO products (shop_id, name, slug, price, image, description, type, account, is_recommended, display_order, is_active)

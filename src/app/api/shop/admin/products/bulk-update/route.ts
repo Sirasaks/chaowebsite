@@ -53,10 +53,7 @@ export async function POST(request: Request) {
         const updateFields: string[] = [];
         const params: any[] = [];
 
-        if (updates.is_auto_price !== undefined) {
-            updateFields.push("is_auto_price = ?");
-            params.push(updates.is_auto_price);
-        }
+
 
         // Add other fields here if needed in the future
 

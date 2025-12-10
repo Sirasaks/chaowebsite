@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
-import { mergeRealTimeStock, Product } from "@/lib/product-service";
+import { Product } from "@/lib/product-service";
 
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
@@ -53,7 +53,7 @@ export async function GET(
         // ดึงสินค้าทั้งหมด
         const [products] = await connection.query<RowDataPacket[]>(
             `SELECT 
-                p.id, p.name, p.image, p.price, p.account, 0 as stock, p.type, p.api_type_id, p.api_provider, p.is_auto_price,
+                p.id, p.name, p.image, p.price, p.account, 0 as stock, p.type,
                 (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed' AND shop_id = p.shop_id) as sold
              FROM products p 
              WHERE p.shop_id = ?
@@ -61,14 +61,8 @@ export async function GET(
             [shopId]
         );
 
-        // Merge กับ real-time data
-        let productsWithRealTimeData;
-        try {
-            productsWithRealTimeData = await mergeRealTimeStock(products as Product[]);
-        } catch (mergeError) {
-            console.error("Merge failed:", mergeError);
-            productsWithRealTimeData = products;
-        }
+        // Merge logic removed
+        let productsWithRealTimeData = products;
 
         // ดึง product_ids จาก category
         const [categoryRows] = await connection.query<RowDataPacket[]>(

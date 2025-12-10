@@ -1,6 +1,6 @@
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
-import { mergeRealTimeStock, Product } from "@/lib/product-service";
+import { Product } from "@/lib/product-service";
 
 export async function getHomepageData(shopId?: number) {
     const connection = await pool.getConnection();
@@ -52,7 +52,7 @@ export async function getHomepageData(shopId?: number) {
                 [safeShopId]
             ),
             connection.query<RowDataPacket[]>(
-                "SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
+                "SELECT id, name, slug, image, price, description, type, account, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
                 [safeShopId]
             ),
             // 5. Fetch Announcement
@@ -70,8 +70,8 @@ export async function getHomepageData(shopId?: number) {
         };
 
         // Merge real-time stock for API products
-        // Merge real-time stock for API products
-        const productsWithStock = await mergeRealTimeStock(products as unknown as Product[]);
+        // mergeRealTimeStock removed        
+        const productsWithStock = products.map((p: any) => ({ ...p, stock: 0 }));
 
         return {
             slideshow: slideshow as any[],

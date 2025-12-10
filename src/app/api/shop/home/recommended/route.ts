@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
-import { mergeRealTimeStock, Product } from "@/lib/product-service";
+import { Product } from "@/lib/product-service";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +26,9 @@ export async function GET(req: Request) {
             [shopId]
         );
 
-        // Merge real-time stock for API products
-        const productsWithStock = await mergeRealTimeStock(products as unknown as Product[]);
+        // Merge real-time stock removed
+        // const productsWithStock = await mergeRealTimeStock(products as unknown as Product[]);
+        const productsWithStock = products.map(p => ({ ...p, stock: 0 }));
 
         return NextResponse.json({
             categories,

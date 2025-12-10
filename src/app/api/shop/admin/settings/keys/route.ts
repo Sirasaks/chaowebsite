@@ -92,13 +92,12 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { gafiw_api_key, slipok_api_key, slipok_branch_id } = body;
+        const { slipok_api_key, slipok_branch_id } = body;
 
         await connection.beginTransaction();
 
         // Upsert settings
         const settingsToUpdate = [
-            { key: "gafiw_api_key", value: gafiw_api_key },
             { key: "slipok_api_key", value: slipok_api_key },
             { key: "slipok_branch_id", value: slipok_branch_id },
         ];
