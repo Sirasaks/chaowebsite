@@ -16,7 +16,8 @@ export async function getHomepageData(shopId?: number) {
             [soldResult],
             [quickLinks],
             [categories],
-            [products]
+            [products],
+            [settingsResult]
         ] = await Promise.all([
             // 1. Fetch Slideshow
             connection.query<RowDataPacket[]>(
@@ -53,6 +54,11 @@ export async function getHomepageData(shopId?: number) {
             connection.query<RowDataPacket[]>(
                 "SELECT id, name, slug, image, price, description, type, account, api_type_id, is_auto_price, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
                 [safeShopId]
+            ),
+            // 5. Fetch Announcement
+            connection.query<RowDataPacket[]>(
+                "SELECT announcement_text FROM site_settings WHERE shop_id = ?",
+                [safeShopId]
             )
         ]);
 
@@ -64,6 +70,7 @@ export async function getHomepageData(shopId?: number) {
         };
 
         // Merge real-time stock for API products
+        // Merge real-time stock for API products
         const productsWithStock = await mergeRealTimeStock(products as unknown as Product[]);
 
         return {
@@ -71,7 +78,8 @@ export async function getHomepageData(shopId?: number) {
             stats,
             quickLinks: quickLinks as any[],
             categories: categories as any[],
-            products: productsWithStock
+            products: productsWithStock,
+            announcement: settingsResult[0]?.announcement_text || ""
         };
     } finally {
         connection.release();

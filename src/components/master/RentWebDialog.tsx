@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, AlertCircle, CheckCircle2, CreditCard } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2, CreditCard, Check, Info } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -17,8 +17,25 @@ interface RentWebDialogProps {
     userCredit: number
 }
 
+const NEW_STEPS = [
+    { id: 1, text: "กำลังตรวจสอบเครดิต...", delay: 600 },
+    { id: 2, text: "กำลังสร้างเว็บไซต์...", delay: 1500 },
+    { id: 3, text: "กำลังตั้งค่าโดเมน...", delay: 1000 },
+    { id: 4, text: "กำลังติดตั้งระบบจัดการร้านค้า...", delay: 1200 },
+    { id: 5, text: "กำลังสร้างบัญชีผู้ดูแลระบบ...", delay: 800 },
+    { id: 6, text: "เว็บไซต์พร้อมใช้งาน!", delay: 500 },
+]
+
+const RENEW_STEPS = [
+    { id: 1, text: "กำลังตรวจสอบเครดิต...", delay: 600 },
+    { id: 2, text: "กำลังตรวจสอบข้อมูลเว็บไซต์...", delay: 800 },
+    { id: 3, text: "กำลังต่ออายุเว็บไซต์...", delay: 1000 },
+    { id: 4, text: "กำลังอัปเดตวันหมดอายุ...", delay: 800 },
+    { id: 5, text: "ต่ออายุสำเร็จ!", delay: 500 },
+]
+
 export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, userCredit }: RentWebDialogProps) {
-    const [step, setStep] = useState<"form" | "success">("form")
+    const [step, setStep] = useState<"form" | "processing">("form")
     const [loading, setLoading] = useState(false)
     const [shopName, setShopName] = useState("")
     const [subdomain, setSubdomain] = useState("")
@@ -26,6 +43,8 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
     const [password, setPassword] = useState("")
     const [operationType, setOperationType] = useState<"new" | "renew">("new")
     const [myShops, setMyShops] = useState<any[]>([])
+    const [currentProcessingStep, setCurrentProcessingStep] = useState(0)
+    const [redirecting, setRedirecting] = useState(false)
     const router = useRouter()
 
     // Fetch shops when dialog opens or switch to Renew
@@ -40,11 +59,29 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
         }
     })
 
+    // Animate processing steps
+    const currentSteps = operationType === "new" ? NEW_STEPS : RENEW_STEPS
+
+    useEffect(() => {
+        if (step === "processing" && currentProcessingStep < currentSteps.length) {
+            const timer = setTimeout(() => {
+                setCurrentProcessingStep(prev => prev + 1)
+            }, currentSteps[currentProcessingStep]?.delay || 500)
+            return () => clearTimeout(timer)
+        } else if (step === "processing" && currentProcessingStep >= currentSteps.length) {
+            // All steps complete, show redirect message then navigate
+            setRedirecting(true)
+            const timer = setTimeout(() => {
+                toast.success(operationType === "new" ? "สร้างเว็บไซต์สำเร็จ!" : "ต่ออายุสำเร็จ!")
+                window.location.href = "/history"
+            }, 1500)
+            return () => clearTimeout(timer)
+        }
+    }, [step, currentProcessingStep, operationType, currentSteps])
+
     const handleShopNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value
         setShopName(val)
-        // Auto-generate subdomain from shop name (simple logic)
-        // Only keep english and numbers for subdomain
         const generated = val.toLowerCase().replace(/[^a-z0-9]/g, "")
         setSubdomain(generated)
     }
@@ -71,7 +108,11 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
             return
         }
 
-        setLoading(true)
+        // Start processing animation
+        setStep("processing")
+        setCurrentProcessingStep(0)
+        setRedirecting(false)
+
         try {
             const res = await fetch("/api/master/rent", {
                 method: "POST",
@@ -88,25 +129,20 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
 
             const data = await res.json()
 
-            if (res.ok) {
-                setStep("success")
-                toast.success(operationType === "new" ? "สร้างเว็บไซต์สำเร็จ!" : "ต่ออายุสำเร็จ!")
-            } else {
+            if (!res.ok) {
+                setStep("form")
                 toast.error(data.error || "เกิดข้อผิดพลาด")
             }
+            // If successful, the animation will continue and transition to success
         } catch (error) {
             console.error("Rent error:", error)
+            setStep("form")
             toast.error("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้")
-        } finally {
-            setLoading(false)
         }
     }
 
     const handleClose = () => {
-        if (step === "success") {
-            // Refresh page or redirect to history
-            window.location.href = "/history"
-        } else {
+        if (step !== "processing") {
             onClose()
         }
     }
@@ -177,6 +213,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                         placeholder="กรุณากรอกชื่อผู้ใช้"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
+                                        autoComplete="off"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -187,6 +224,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                         placeholder="......"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
+                                        autoComplete="new-password"
                                     />
                                 </div>
                             </>
@@ -223,23 +261,44 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                             </ul>
                         </div>
                     </div>
-                ) : (
-                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle2 className="h-10 w-10 text-green-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-green-600">ดำเนินการสำเร็จ!</h3>
-                        <p className="text-gray-600">
-                            {operationType === "new" ? "เว็บไซต์ของคุณพร้อมใช้งานแล้ว" : "ต่ออายุเว็บไซต์เรียบร้อยแล้ว"}
-                        </p>
-                        {operationType === "new" && (
-                            <div className="bg-gray-100 p-4 rounded-lg text-left w-full max-w-xs mx-auto mt-4">
-                                <p className="text-sm"><strong>Username:</strong> {username}</p>
-                                <p className="text-sm"><strong>Password:</strong> {password}</p>
+                ) : step === "processing" ? (
+                    <div className="py-8 px-4">
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-6 space-y-3">
+                            {/* Header */}
+                            <div className="flex items-center gap-2 text-green-700 font-semibold text-lg mb-4">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <span>
+                                    {operationType === "new"
+                                        ? `กำลังสร้างเว็บไซต์: ${subdomain}.chaoweb.site`
+                                        : `กำลังต่ออายุ: ${subdomain}.chaoweb.site`
+                                    }
+                                </span>
                             </div>
-                        )}
+
+                            {/* Progress Steps */}
+                            {currentSteps.map((s, index) => (
+                                <div
+                                    key={s.id}
+                                    className={`flex items-center gap-3 transition-all duration-300 ${index < currentProcessingStep
+                                        ? "opacity-100"
+                                        : "opacity-0 h-0 overflow-hidden"
+                                        }`}
+                                >
+                                    <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                    <span className="text-green-700">{s.text}</span>
+                                </div>
+                            ))}
+
+                            {/* Redirect message */}
+                            {redirecting && (
+                                <div className="flex items-center gap-3 text-blue-600 animate-pulse mt-4">
+                                    <Info className="h-5 w-5 flex-shrink-0" />
+                                    <span>กำลังนำคุณไปที่หน้าโปรไฟล์...</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
+                ) : null}
 
                 <DialogFooter className="flex-col sm:flex-row gap-2">
                     {step === "form" ? (
@@ -265,11 +324,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                 )}
                             </Button>
                         </>
-                    ) : (
-                        <Button onClick={handleClose} className="w-full bg-blue-600 hover:bg-blue-700">
-                            ตกลง
-                        </Button>
-                    )}
+                    ) : null}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

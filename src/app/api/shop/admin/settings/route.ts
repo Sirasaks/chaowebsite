@@ -40,7 +40,7 @@ export async function PUT(req: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await req.json();
-        const { site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link } = body;
+        const { site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text } = body;
 
         // Check if settings exist for this shop
         const [existing] = await connection.query<RowDataPacket[]>(
@@ -53,16 +53,16 @@ export async function PUT(req: Request) {
             await connection.query(
                 `UPDATE site_settings SET 
                  site_title = ?, site_description = ?, site_icon = ?, site_logo = ?, 
-                 site_background = ?, primary_color = ?, secondary_color = ?, contact_link = ?
+                 site_background = ?, primary_color = ?, secondary_color = ?, contact_link = ?, announcement_text = ?
                  WHERE shop_id = ?`,
-                [site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, shopId]
+                [site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text, shopId]
             );
         } else {
             // Insert
             await connection.query(
-                `INSERT INTO site_settings (shop_id, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [shopId, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link]
+                `INSERT INTO site_settings (shop_id, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [shopId, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text]
             );
         }
 

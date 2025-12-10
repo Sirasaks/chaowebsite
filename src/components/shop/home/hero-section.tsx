@@ -40,7 +40,7 @@ export function HeroSection({ images }: HeroSectionProps) {
             <div className="max-w-7xl mx-auto px-4">
                 {/* Slideshow / Banner */}
                 {images.length > 0 ? (
-                    <div className="relative overflow-hidden rounded-lg shadow-lg aspect-3/1 md:aspect-4/1 bg-slate-100">
+                    <div className="relative overflow-hidden rounded-lg shadow-sm aspect-3/1 md:aspect-4/1 bg-slate-100">
                         <div className="relative w-full h-full group">
                             {images.map((image, index) => (
                                 <div

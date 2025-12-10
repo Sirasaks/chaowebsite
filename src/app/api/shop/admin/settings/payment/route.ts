@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
         // Fetch settings
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_name', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_code', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
             [shopId]
         );
 
@@ -71,25 +71,27 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { bank_name, bank_account_number, bank_account_name, truemoney_phone, bank_transfer_enabled, truemoney_angpao_enabled } = body;
+        const { bank_code, bank_account_number, bank_account_name, truemoney_phone, bank_transfer_enabled, truemoney_angpao_enabled } = body;
 
         await connection.beginTransaction();
 
         // Upsert settings
         const settingsToUpdate = [
-            { key: "bank_name", value: bank_name },
+            { key: "bank_code", value: bank_code },
             { key: "bank_account_number", value: bank_account_number },
             { key: "bank_account_name", value: bank_account_name },
             { key: "truemoney_phone", value: truemoney_phone },
-            { key: "bank_transfer_enabled", value: String(bank_transfer_enabled) },
-            { key: "truemoney_angpao_enabled", value: String(truemoney_angpao_enabled) },
+            { key: "bank_transfer_enabled", value: bank_transfer_enabled },
+            { key: "truemoney_angpao_enabled", value: truemoney_angpao_enabled },
         ];
 
         for (const setting of settingsToUpdate) {
-            if (setting.value !== undefined) {
+            // Only update if value is explicitly provided (not undefined)
+            if (setting.value !== undefined && setting.value !== null) {
+                const valueToSave = typeof setting.value === 'boolean' ? String(setting.value) : setting.value;
                 await connection.query(
                     "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-                    [shopId, setting.key, setting.value, setting.value]
+                    [shopId, setting.key, valueToSave, valueToSave]
                 );
             }
         }

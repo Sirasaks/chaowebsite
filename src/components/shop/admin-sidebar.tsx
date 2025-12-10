@@ -208,7 +208,7 @@ export function AdminSidebar() {
                     <SidebarCollapse
                         icon={Settings}
                         label="ตั้งค่าเว็บไซต์"
-                        isActive={pathname.startsWith("/admin/settings")}
+                        isActive={pathname.startsWith("/admin/settings") && !pathname.startsWith("/admin/settings/topup")}
                     >
                         <SidebarItem
                             icon={ImageIcon}
@@ -223,22 +223,34 @@ export function AdminSidebar() {
                             isActive={pathname === "/admin/settings"}
                         />
                         <SidebarItem
-                            icon={Settings}
-                            label="ตั้งค่า API"
-                            href="/admin/settings/api"
-                            isActive={pathname === "/admin/settings/api"}
-                        />
-                        <SidebarItem
-                            icon={CreditCard}
-                            label="ตั้งค่าการชำระเงิน"
-                            href="/admin/settings/payment"
-                            isActive={pathname === "/admin/settings/payment"}
-                        />
-                        <SidebarItem
                             icon={Gamepad2}
                             label="จัดการปุ่มทางลัด"
                             href="/admin/settings/quicklink"
                             isActive={pathname === "/admin/settings/quicklink"}
+                        />
+                        <SidebarItem
+                            icon={Settings}
+                            label="จัดการ Theme"
+                            href="/admin/settings/theme"
+                            isActive={pathname === "/admin/settings/theme"}
+                        />
+                    </SidebarCollapse>
+                    <SidebarCollapse
+                        icon={DollarSign}
+                        label="จัดการเติมเงิน"
+                        isActive={pathname.startsWith("/admin/settings/topup")}
+                    >
+                        <SidebarItem
+                            icon={Gift}
+                            label="Truemoney อังเปา"
+                            href="/admin/settings/topup/truemoney"
+                            isActive={pathname === "/admin/settings/topup/truemoney"}
+                        />
+                        <SidebarItem
+                            icon={CreditCard}
+                            label="เช็คสลิปธนาคาร"
+                            href="/admin/settings/topup/slipok"
+                            isActive={pathname === "/admin/settings/topup/slipok"}
                         />
                     </SidebarCollapse>
                 </SidebarGroup>

@@ -73,6 +73,16 @@ export async function middleware(req: NextRequest) {
         }
     }
 
+    // Guest Route Guard for Master: Redirect logged-in users away from auth pages
+    const isGuestRoute = pathname === "/login" || pathname === "/register";
+    const isMasterDomain = !subdomain || subdomain === "www";
+    if (isGuestRoute && isMasterDomain) {
+        const token = req.cookies.get("token");
+        if (token) {
+            return NextResponse.redirect(new URL("/", req.url));
+        }
+    }
+
     // Rewrite Logic
     if (isShop) {
         // Rewrite to /shop/...

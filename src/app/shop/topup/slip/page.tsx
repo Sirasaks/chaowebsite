@@ -123,9 +123,9 @@ export default function TopupSlipPage() {
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">ธนาคาร</span>
                             <span className="font-medium flex items-center gap-2">
-                                {bankDetails?.bank_name ? (
+                                {bankDetails?.bank_code ? (
                                     (() => {
-                                        const bank = THAI_BANKS.find(b => b.name === bankDetails.bank_name);
+                                        const bank = THAI_BANKS.find(b => b.code === bankDetails.bank_code);
                                         return (
                                             <>
                                                 {bank ? (
@@ -135,7 +135,7 @@ export default function TopupSlipPage() {
                                                 ) : (
                                                     <div className="h-6 w-6 rounded-full bg-gray-200" />
                                                 )}
-                                                {bankDetails.bank_name}
+                                                {bank?.name || bankDetails.bank_code}
                                             </>
                                         );
                                     })()

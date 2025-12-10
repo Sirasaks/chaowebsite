@@ -156,6 +156,12 @@ export async function POST(request: Request) {
                 [shopId, shopName]
             );
 
+            // Initialize Default Topup Settings (Disabled by default)
+            await connection.query(
+                "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, 'bank_transfer_enabled', 'false'), (?, 'truemoney_angpao_enabled', 'false')",
+                [shopId, shopId]
+            );
+
         } else {
             // Renew: Extend expire_date
             const [shopResult] = await connection.query<RowDataPacket[]>(
