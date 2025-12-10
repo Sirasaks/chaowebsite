@@ -54,7 +54,7 @@ export async function GET(
         const [products] = await connection.query<RowDataPacket[]>(
             `SELECT 
                 p.id, p.name, p.image, p.price, p.account, 0 as stock, p.type, p.api_type_id, p.api_provider, p.is_auto_price,
-                (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
+                (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed' AND shop_id = p.shop_id) as sold
              FROM products p 
              WHERE p.shop_id = ?
              ORDER BY p.created_at DESC`,

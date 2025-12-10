@@ -48,9 +48,20 @@ export async function POST(request: Request) {
         // So the Reset API will know the shop from the domain.
         // So we just need to ensure the Reset API uses the shop_id from the domain to filter the user update.
 
+        // Self-healing: Ensure table has shop_id
+        try {
+            const [columns] = await connection.query<RowDataPacket[]>("SHOW COLUMNS FROM password_resets LIKE 'shop_id'");
+            if (columns.length === 0) {
+                await connection.query("ALTER TABLE password_resets ADD COLUMN shop_id INT NOT NULL DEFAULT 0");
+                await connection.query("ALTER TABLE password_resets ADD INDEX idx_token_shop (token, shop_id)");
+            }
+        } catch (err) {
+            // Ignore error
+        }
+
         await connection.query(
-            "INSERT INTO password_resets (email, token) VALUES (?, ?)",
-            [email, token]
+            "INSERT INTO password_resets (email, token, shop_id) VALUES (?, ?, ?)",
+            [email, token, shopId]
         );
 
         // 4. Send Email

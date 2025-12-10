@@ -22,14 +22,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร" }, { status: 400 });
         }
 
-        // 1. Verify Token
+        // 1. Verify Token and Shop ID
         const [resets] = await connection.query<RowDataPacket[]>(
-            "SELECT email FROM password_resets WHERE token = ?",
-            [token]
+            "SELECT email FROM password_resets WHERE token = ? AND shop_id = ?",
+            [token, shopId]
         );
 
         if (resets.length === 0) {
-            return NextResponse.json({ error: "ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุ" }, { status: 400 });
+            return NextResponse.json({ error: "ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หรือหมดอายุ หรือไม่สามารถใช้กับร้านค้านี้ได้" }, { status: 400 });
         }
 
         const email = resets[0].email;

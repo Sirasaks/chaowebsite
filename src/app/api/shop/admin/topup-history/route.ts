@@ -33,6 +33,7 @@ export async function GET(request: Request) {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS topup_history (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                shop_id INT NOT NULL DEFAULT 0,
                 user_id INT NOT NULL,
                 trans_ref VARCHAR(255) NOT NULL UNIQUE,
                 amount DECIMAL(10, 2) NOT NULL,
@@ -40,9 +41,21 @@ export async function GET(request: Request) {
                 receiver_name VARCHAR(255),
                 status VARCHAR(50) DEFAULT 'completed',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                KEY idx_shop_id (shop_id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
+
+        // Self-healing: Ensure shop_id exists
+        try {
+            const [columns] = await pool.query<RowDataPacket[]>("SHOW COLUMNS FROM topup_history LIKE 'shop_id'");
+            if (columns.length === 0) {
+                await pool.query("ALTER TABLE topup_history ADD COLUMN shop_id INT NOT NULL DEFAULT 0");
+                await pool.query("ALTER TABLE topup_history ADD INDEX idx_shop_id (shop_id)");
+            }
+        } catch (err) {
+            console.error("Auto-migration error:", err);
+        }
 
         const [rows] = await pool.query(`
             SELECT 
