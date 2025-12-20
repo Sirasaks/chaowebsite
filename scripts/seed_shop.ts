@@ -33,10 +33,10 @@ async function main() {
     try {
         // 1. Slideshow
         const slideshows = [
-            "https://placehold.co/1200x400/3498db/ffffff?text=Slide+1",
-            "https://placehold.co/1200x400/e74c3c/ffffff?text=Slide+2",
-            "https://placehold.co/1200x400/2ecc71/ffffff?text=Slide+3",
-            "https://placehold.co/1200x400/9b59b6/ffffff?text=Slide+4"
+            "https://placehold.co/1200x300/3498db/ffffff?text=1200x300",
+            "https://placehold.co/1200x300/e74c3c/ffffff?text=1200x300",
+            "https://placehold.co/1200x300/2ecc71/ffffff?text=1200x300",
+            "https://placehold.co/1200x300/9b59b6/ffffff?text=1200x300"
         ];
         console.log("Seeding Slideshows...");
         for (let i = 0; i < slideshows.length; i++) {
@@ -45,10 +45,10 @@ async function main() {
 
         // 2. Quick Links
         const quickLinks = [
-            { title: "เติมเงิน", url: "/topup", img: "https://placehold.co/400x400/f1c40f/ffffff?text=Topup" },
-            { title: "สินค้าทั้งหมด", url: "/products", img: "https://placehold.co/400x400/e67e22/ffffff?text=All+Products" },
-            { title: "โปรโมชั่น", url: "/promotions", img: "https://placehold.co/400x400/e74c3c/ffffff?text=Promotion" },
-            { title: "ติดต่อเรา", url: "/contact", img: "https://placehold.co/400x400/34495e/ffffff?text=Contact" }
+            { title: "เติมเงิน", url: "/topup", img: "https://placehold.co/400x200/f1c40f/ffffff?text=400x200" },
+            { title: "สินค้าทั้งหมด", url: "/products", img: "https://placehold.co/400x200/e67e22/ffffff?text=400x200" },
+            { title: "โปรโมชั่น", url: "/promotions", img: "https://placehold.co/400x200/e74c3c/ffffff?text=400x200" },
+            { title: "ติดต่อเรา", url: "/contact", img: "https://placehold.co/400x200/34495e/ffffff?text=400x200" }
         ];
         console.log("Seeding Quick Links...");
         for (let i = 0; i < quickLinks.length; i++) {
@@ -60,10 +60,10 @@ async function main() {
 
         // 3. Categories
         const categories = [
-            { name: "สินค้าขายดี", slug: "best-seller", img: "https://placehold.co/600x600/e74c3c/ffffff?text=Best+Seller" },
-            { name: "สินค้าใหม่", slug: "new-arrival", img: "https://placehold.co/600x600/3498db/ffffff?text=New+Arrival" },
-            { name: "หมวดหมู่ 1", slug: "category-1", img: "https://placehold.co/600x600/2ecc71/ffffff?text=Category+1" },
-            { name: "หมวดหมู่ 2", slug: "category-2", img: "https://placehold.co/600x600/9b59b6/ffffff?text=Category+2" }
+            { name: "สินค้าขายดี", slug: "best-seller", img: "https://placehold.co/800x400/e74c3c/ffffff?text=800x400" },
+            { name: "สินค้าใหม่", slug: "new-arrival", img: "https://placehold.co/800x400/3498db/ffffff?text=800x400" },
+            { name: "หมวดหมู่ 1", slug: "category-1", img: "https://placehold.co/800x400/2ecc71/ffffff?text=800x400" },
+            { name: "หมวดหมู่ 2", slug: "category-2", img: "https://placehold.co/800x400/9b59b6/ffffff?text=800x400" }
         ];
         console.log("Seeding Categories...");
         for (let i = 0; i < categories.length; i++) {
@@ -75,11 +75,11 @@ async function main() {
 
         // 4. Products
         const products = [
-            { name: "สินค้าตัวอย่าง 1", price: 100, img: "https://placehold.co/1500x1500/95a5a6/ffffff?text=Product+1" },
-            { name: "สินค้าตัวอย่าง 2", price: 200, img: "https://placehold.co/1500x1500/95a5a6/ffffff?text=Product+2" },
-            { name: "สินค้าตัวอย่าง 3", price: 300, img: "https://placehold.co/1500x1500/95a5a6/ffffff?text=Product+3" },
-            { name: "สินค้าตัวอย่าง 4", price: 400, img: "https://placehold.co/1500x1500/95a5a6/ffffff?text=Product+4" },
-            { name: "สินค้าตัวอย่าง 5", price: 500, img: "https://placehold.co/1500x1500/95a5a6/ffffff?text=Product+5" }
+            { name: "สินค้าตัวอย่าง 1", price: 100, img: "https://placehold.co/500x500/95a5a6/ffffff?text=500x500" },
+            { name: "สินค้าตัวอย่าง 2", price: 200, img: "https://placehold.co/500x500/95a5a6/ffffff?text=500x500" },
+            { name: "สินค้าตัวอย่าง 3", price: 300, img: "https://placehold.co/500x500/95a5a6/ffffff?text=500x500" },
+            { name: "สินค้าตัวอย่าง 4", price: 400, img: "https://placehold.co/500x500/95a5a6/ffffff?text=500x500" },
+            { name: "สินค้าตัวอย่าง 5", price: 500, img: "https://placehold.co/500x500/95a5a6/ffffff?text=500x500" }
         ];
         console.log("Seeding Products...");
         for (let i = 0; i < products.length; i++) {
