@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         const { login, password } = loginSchema.parse(body);
 
         const [rows] = await pool.query(
-            "SELECT id, username, password, role FROM master_users WHERE username = ? OR email = ?",
+            "SELECT id, username, password, role, credit FROM master_users WHERE username = ? OR email = ?",
             [login, login]
         );
         const user = (rows as any[])[0];
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
         const res = NextResponse.json({
             message: "เข้าสู่ระบบสำเร็จ",
-            user: { id: user.id, username: user.username, role: user.role },
+            user: { id: user.id, username: user.username, role: user.role, credit: user.credit },
         });
         res.headers.set("Set-Cookie", cookie);
         return res;

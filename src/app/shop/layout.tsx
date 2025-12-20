@@ -1,26 +1,36 @@
-"use client";
+import { getShopIdFromContext } from "@/lib/shop-helper";
+import { redirect } from "next/navigation";
+import ShopLayoutClient from "@/components/shop/ShopLayoutClient";
+import { headers } from "next/headers";
 
-import { usePathname } from "next/navigation";
-import Navbar from "@/components/shop/Navbar"
-import { Footer } from "@/components/shop/Footer"
-import PageTransition from "@/components/shop/PageTransition"
-import { ShopAuthProvider } from "@/context/AuthContext"
-
-export default function ShopLayout({
+export default async function ShopLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const pathname = usePathname();
-    const isAdminPage = pathname?.startsWith("/admin");
+    // 1. Check if the shop exists
+    const shopId = await getShopIdFromContext();
 
+    // 2. If no shop found (and we are in the /shop route), redirect to Master
+    if (!shopId) {
+        const headersList = await headers();
+        const host = headersList.get("host") || "";
+
+        // Determine protocol and root domain
+        // Ideally this should match your middleware logic or env vars
+        if (host.includes("localhost")) {
+            redirect("http://localhost:3000");
+        } else {
+            // Production fallback
+            redirect("https://chaoweb.site");
+        }
+    }
+
+    // 3. If valid, render the client structure
     return (
-        <ShopAuthProvider>
-            <div className="flex min-h-screen flex-col">
-                {!isAdminPage && <Navbar />}
-                {isAdminPage ? children : <PageTransition>{children}</PageTransition>}
-                {!isAdminPage && <Footer />}
-            </div>
-        </ShopAuthProvider>
+        <ShopLayoutClient>
+            {children}
+        </ShopLayoutClient>
     )
 }
+

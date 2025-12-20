@@ -49,7 +49,7 @@ export default function MasterLoginPage() {
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด")
 
-            setUser({ username: data.user.username, credit: 0, role: data.user.role })
+            setUser({ username: data.user.username, credit: data.user.credit, role: data.user.role })
             toast.success("เข้าสู่ระบบสำเร็จ")
             setIsSuccess(true)
             router.push(callbackUrl)
