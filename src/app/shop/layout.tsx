@@ -2,6 +2,7 @@ import { getShopIdFromContext } from "@/lib/shop-helper";
 import { redirect } from "next/navigation";
 import ShopLayoutClient from "@/components/shop/ShopLayoutClient";
 import { headers } from "next/headers";
+import pool from "@/lib/db";
 
 export default async function ShopLayout({
     children,
@@ -26,9 +27,16 @@ export default async function ShopLayout({
         }
     }
 
-    // 3. If valid, render the client structure
+    // 3. Fetch Shop Settings
+    const [settingsRows] = await pool.query(
+        "SELECT site_title, site_logo, contact_link, announcement_text FROM site_settings WHERE shop_id = ?",
+        [shopId]
+    );
+    const settings = (settingsRows as any[])[0] || {};
+
+    // 4. If valid, render the client structure
     return (
-        <ShopLayoutClient>
+        <ShopLayoutClient settings={settings}>
             {children}
         </ShopLayoutClient>
     )

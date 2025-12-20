@@ -8,8 +8,10 @@ import { ShopAuthProvider } from "@/context/AuthContext"
 
 export default function ShopLayoutClient({
     children,
+    settings
 }: {
-    children: React.ReactNode
+    children: React.ReactNode;
+    settings?: any;
 }) {
     const pathname = usePathname();
     const isAdminPage = pathname?.startsWith("/admin");
@@ -17,9 +19,9 @@ export default function ShopLayoutClient({
     return (
         <ShopAuthProvider>
             <div className="flex min-h-screen flex-col">
-                {!isAdminPage && <Navbar />}
+                {!isAdminPage && <Navbar logo={settings?.site_logo} title={settings?.site_title} />}
                 {isAdminPage ? children : <PageTransition>{children}</PageTransition>}
-                {!isAdminPage && <Footer />}
+                {!isAdminPage && <Footer title={settings?.site_title} />}
             </div>
         </ShopAuthProvider>
     )

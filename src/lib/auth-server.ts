@@ -1,0 +1,43 @@
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+import pool from "@/lib/db";
+import { RowDataPacket } from "mysql2";
+import { getJwtSecret } from "@/lib/env";
+
+export async function checkShopAdmin(shopId: number): Promise<boolean> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) return false;
+
+    try {
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number, tokenType?: string };
+
+        // Ensure token is for shop, not master (though verifying against shop user table implicitly checks this)
+        // But explicit check is safer if token structure changes
+        if (decoded.tokenType && decoded.tokenType !== 'shop') return false;
+
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+            [decoded.userId, shopId]
+        );
+        return users.length > 0 && users[0].role === 'owner';
+    } catch (error) {
+        return false;
+    }
+}
+
+export async function verifyShopSession(): Promise<boolean> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) return false;
+
+    try {
+        jwt.verify(token, getJwtSecret());
+        // We could also check DB here but JWT valid is usually enough for redirecting away from login
+        return true;
+    } catch (error) {
+        return false;
+    }
+}

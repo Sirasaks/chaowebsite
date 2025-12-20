@@ -70,7 +70,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
                     <div className="flex items-center space-x-4">
                         <Link href="/" className="font-bold text-2xl flex items-center gap-2">
                             {logo ? (
-                                <img src={logo} alt={title || "Logo"} className="h-8 w-auto object-contain" />
+                                <img src={logo} alt={title || "Logo"} className="h-14 w-auto object-contain" />
                             ) : (
                                 <span>{title || "My Shop"}</span>
                             )}

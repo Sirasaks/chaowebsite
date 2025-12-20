@@ -1,12 +1,26 @@
 import { AdminSidebar } from "@/components/shop/admin-sidebar";
 import { AdminHeader } from "@/components/shop/admin-header";
 import PageTransition from "@/components/shop/PageTransition";
+import { getShopIdFromContext } from "@/lib/shop-helper";
+import { checkShopAdmin } from "@/lib/auth-server";
+import { redirect } from "next/navigation";
 
-export default function AdminLayout({
+export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const shopId = await getShopIdFromContext();
+
+    // If shop not found, layout.tsx parent handles it, but good to be safe
+    if (!shopId) return null; // or redirect
+
+    const isAdmin = await checkShopAdmin(shopId);
+
+    if (!isAdmin) {
+        redirect("/login");
+    }
+
     return (
         <div className="flex min-h-screen bg-slate-50/50">
             {/* Desktop Sidebar */}
