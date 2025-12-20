@@ -9,12 +9,12 @@ export default function MasterPage() {
 
             <div className="mt-8 flex gap-4">
                 <Link href="/register">
-                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                    <Button size="lg" className="bg-primary hover:bg-primary/80">
                         Get Started
                     </Button>
                 </Link>
                 <Link href="/login">
-                    <Button variant="outline" size="lg">
+                    <Button variant="outline" size="lg" >
                         Login
                     </Button>
                 </Link>

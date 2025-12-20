@@ -1,5 +1,4 @@
 import { MasterNavbar } from "@/components/master/Navbar";
-import { MasterFooter } from "@/components/master/Footer";
 
 import { MasterAuthProvider } from "@/context/AuthContext"
 

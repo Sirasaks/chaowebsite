@@ -67,7 +67,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
 
                     {/* Left — Logo + Desktop Menu */}
                     <div className="flex items-center space-x-4">
-                        <Link href="/" className="font-bold text-2xl flex items-center gap-2 text-blue-600">
+                        <Link href="/" className="font-bold text-2xl flex items-center gap-2 text-primary">
                             {logo ? (
                                 <img src={logo} alt={title || "Logo"} className="h-8 w-auto object-contain" />
                             ) : (
@@ -75,11 +75,10 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                             )}
                         </Link>
                         <div className="hidden md:flex items-center space-x-1">
-                            <Link href="/"><Button variant="ghost" className={pathname === "/" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><Home className="mr-2 h-4 w-4" />หน้าแรก</Button></Link>
-                            <Link href="/topup"><Button variant="ghost" className={pathname?.startsWith("/topup") ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><Wallet className="mr-2 h-4 w-4" />เติมเงิน</Button></Link>
-                            <Link href="/packages"><Button variant="ghost" className={pathname === "/master/packages" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ</Button></Link>
-                            {/* <Link href="/master/features"><Button variant="ghost" className={pathname === "/master/features" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><CircleDollarSign className="mr-2 h-4 w-4" />ฟีเจอร์</Button></Link> */}
-                            <Link href="/contact"><Button variant="ghost" className={pathname === "/contact" ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700" : ""}><PhoneIcon className="mr-2 h-4 w-4" />ติดต่อเรา</Button></Link>
+                            <Link href="/"><Button variant="ghost" className={pathname === "/" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Home className="mr-2 h-4 w-4" />หน้าแรก</Button></Link>
+                            <Link href="/topup"><Button variant="ghost" className={pathname?.startsWith("/topup") ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Wallet className="mr-2 h-4 w-4" />เติมเงิน</Button></Link>
+                            <Link href="/shop"><Button variant="ghost" className={pathname === "/shop" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ</Button></Link>
+                            <Link href="/contact"><Button variant="ghost" className={pathname === "/contact" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><PhoneIcon className="mr-2 h-4 w-4" />ติดต่อเรา</Button></Link>
                         </div>
                     </div>
 
@@ -106,7 +105,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href="/packages" className="cursor-pointer">
+                                    <Link href="/shop" className="cursor-pointer">
                                         <ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ
                                     </Link>
                                 </DropdownMenuItem>
@@ -130,7 +129,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                                             <Avatar className="h-10 w-10">
                                                 <AvatarImage src="" alt={user.username} />
-                                                <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                                                <AvatarFallback className="bg-primary text-white font-semibold">
                                                     {user.username.charAt(0).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -141,7 +140,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <DropdownMenuLabel>
                                             <div className="flex flex-col space-y-1">
                                                 <p className="leading-none">{user.username}</p>
-                                                <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-blue-600 text-white w-fit shadow-sm">
+                                                <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-primary text-white w-fit shadow-sm">
                                                     <Wallet className="mr-2 h-4 w-4" />
                                                     <p className="text-xs font-medium">เครดิต: {Number(user.credit).toFixed(2)} บาท</p>
                                                 </div>
@@ -183,7 +182,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                     <Button asChild variant="outline">
                                         <Link href="/login"><LogIn className="mr-2 h-4 w-4" />เข้าสู่ระบบ</Link>
                                     </Button>
-                                    <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                                    <Button asChild className="bg-primary hover:bg-primary/80">
                                         <Link href="/register"><UserPlus className="mr-2 h-4 w-4" />สมัครสมาชิก</Link>
                                     </Button>
                                 </div>
@@ -200,7 +199,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                                             <Avatar className="h-10 w-10">
                                                 <AvatarImage src="" alt={user.username} />
-                                                <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                                                <AvatarFallback className="bg-primary text-white font-semibold">
                                                     {user.username.charAt(0).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
