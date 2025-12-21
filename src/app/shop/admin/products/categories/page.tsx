@@ -17,27 +17,19 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, List, Search, Save } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, List, Save, ArrowUpDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Category } from "@/lib/category-service";
 import { CategoryTableSkeleton } from "@/components/shop/admin/CategoryTableSkeleton";
+import { ReorderDialog } from "@/components/shop/admin/ReorderDialog";
+import { TransferOrderingDialog } from "@/components/shop/admin/TransferOrderingDialog";
+import axios from "axios";
 
-interface CategoryProduct {
-    id: number;
-    name: string;
-    image: string;
-    price: string;
-    stock: number;
-    sold: number;
-    type: string;
-    isSelected: boolean;
-}
-
-const CategoryProductsDialog = ({
+// Helper for Product Dialog content
+const CategoryProductsManager = ({
     category,
     open,
     onOpenChange
@@ -46,17 +38,14 @@ const CategoryProductsDialog = ({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) => {
-    const [products, setProducts] = useState<CategoryProduct[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [search, setSearch] = useState("");
 
     useEffect(() => {
         if (open && category) {
             fetchProducts();
         } else {
             setProducts([]);
-            setSearch("");
         }
     }, [open, category]);
 
@@ -75,99 +64,36 @@ const CategoryProductsDialog = ({
         }
     };
 
-    const handleToggle = (productId: number) => {
-        setProducts(products.map(p =>
-            p.id === productId ? { ...p, isSelected: !p.isSelected } : p
-        ));
-    };
-
-    const handleSave = async () => {
+    const handleSave = async (selectedItems: any[]) => {
         if (!category) return;
-        setSaving(true);
         try {
-            const selectedIds = products.filter(p => p.isSelected).map(p => p.id);
+            const selectedIds = selectedItems.map(p => p.id);
             const res = await fetch(`/api/shop/admin/categories/${category.id}/products`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productIds: selectedIds }),
+                body: JSON.stringify({ productIds: selectedIds }), // Order is preserved in array
             });
 
             if (!res.ok) throw new Error("Failed to save");
             toast.success("บันทึกรายการสินค้าเรียบร้อย");
             onOpenChange(false);
         } catch (error) {
+            console.error(error);
             toast.error("บันทึกไม่สำเร็จ");
-        } finally {
-            setSaving(false);
+            throw error; // Let the dialog handle loading state or error
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    if (!open && !loading) return null;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>จัดการสินค้าในหมวดหมู่: {category?.name}</DialogTitle>
-                </DialogHeader>
-
-                <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="ค้นหาสินค้า..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
-                </div>
-
-                <div className="flex-1 overflow-y-auto border rounded-md p-2 space-y-1">
-                    {loading ? (
-                        <div className="flex justify-center p-8">
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                    ) : filteredProducts.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">ไม่พบสินค้า</div>
-                    ) : (
-                        filteredProducts.map(product => (
-                            <div
-                                key={product.id}
-                                className={`flex items-center gap-3 p-2 rounded cursor-pointer border transition-all ${product.isSelected
-                                    ? 'bg-gradient-primary text-white '
-                                    : 'hover:bg-slate-50 '
-                                    }`}
-                                onClick={() => handleToggle(product.id)}
-                            >
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center ${product.isSelected ? 'bg-white border-white' : 'border-slate-300'
-                                    }`}>
-                                    {product.isSelected && <div className="w-2.5 h-2.5 bg-gradient-primary rounded-sm" />}
-                                </div>
-                                <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover bg-slate-100" />
-                                <div className="flex-1">
-                                    <div className="font-medium text-sm">{product.name}</div>
-                                    <div className={`text-xs ${product.isSelected ? 'text-blue-100' : 'text-muted-foreground'}`}>
-                                        ราคา: ฿{product.price} | ({product.type}) {product.type === 'form' ? `ขายไปแล้ว: ${product.sold} ชิ้น` : `คงเหลือ: ${product.stock}`}
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                <DialogFooter>
-                    <div className="flex-1 flex items-center text-sm text-muted-foreground">
-                        เลือกแล้ว {products.filter(p => p.isSelected).length} รายการ
-                    </div>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>ยกเลิก</Button>
-                    <Button onClick={handleSave} disabled={saving}>
-                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        บันทึก
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <TransferOrderingDialog
+            title={`จัดการสินค้าในหมวดหมู่: ${category?.name}`}
+            open={open}
+            onOpenChange={onOpenChange}
+            items={products}
+            onSave={handleSave}
+        />
     );
 };
 
@@ -287,14 +213,48 @@ export default function AdminCategoriesPage() {
         }
     };
 
+    const handleReorderCategories = async (updatedItems: any[]) => {
+        try {
+            await Promise.all(updatedItems.map(item =>
+                axios.put("/api/shop/admin/categories", {
+                    id: item.id,
+                    name: item.name,
+                    slug: item.slug,
+                    image: item.image,
+                    is_recommended: item.is_recommended, // preserve existing
+                    is_active: item.is_active, // preserve existing
+                    display_order: item.display_order
+                })
+            ));
+            await fetchCategories();
+            // Success toast is handled by dialog
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">จัดการหมวดหมู่สินค้า</h1>
-                <Button onClick={handleAdd}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    เพิ่มหมวดหมู่
-                </Button>
+                <div className="flex gap-2">
+                    <ReorderDialog
+                        title="จัดเรียงหมวดหมู่"
+                        items={categories}
+                        onSave={handleReorderCategories}
+                        trigger={
+                            <Button variant="outline">
+                                <ArrowUpDown className="mr-2 h-4 w-4" />
+                                จัดเรียง
+                            </Button>
+                        }
+                    />
+                    <Button onClick={handleAdd}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        เพิ่มหมวดหมู่
+                    </Button>
+                </div>
             </div>
 
             {loading ? (
@@ -411,7 +371,7 @@ export default function AdminCategoriesPage() {
                 </DialogContent>
             </Dialog>
 
-            <CategoryProductsDialog
+            <CategoryProductsManager
                 category={productDialogCategory}
                 open={!!productDialogCategory}
                 onOpenChange={(open) => !open && setProductDialogCategory(null)}

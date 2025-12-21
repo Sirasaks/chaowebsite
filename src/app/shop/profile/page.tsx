@@ -124,7 +124,7 @@ export default function ProfilePage() {
                     </Button>
                     {user.role === 'owner' && (
                         <Button asChild>
-                            <Link href="/admin/home">จัดการระบบ</Link>
+                            <Link href="/admin">จัดการระบบ</Link>
                         </Button>
                     )}
                 </div>

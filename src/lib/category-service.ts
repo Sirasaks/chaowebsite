@@ -7,6 +7,8 @@ export interface Category {
     slug: string;
     image: string;
     is_active?: boolean | number;
+    is_recommended?: boolean;
+    display_order?: number;
     created_at: Date;
 }
 

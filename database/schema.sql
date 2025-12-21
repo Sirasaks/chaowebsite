@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS products (
     type ENUM('account', 'form', 'api') NOT NULL,
     account LONGTEXT,
     api_type_id VARCHAR(255),
-    api_provider ENUM('gafiw') DEFAULT 'gafiw',
+    api_provider VARCHAR(50),
     is_auto_price BOOLEAN DEFAULT FALSE,
     is_recommended BOOLEAN DEFAULT FALSE,
     is_active TINYINT(1) DEFAULT 1,
@@ -133,9 +133,6 @@ VALUES ('site_name', 'My Shop'),
     ('primary_color', '#3b82f6'),
     ('secondary_color', '#8b5cf6'),
     ('truemoney_phone', ''),
-    ('gafiw_api_key', ''),
-    ('gafiw_api_secret', ''),
-    ('gafiw_api_secret', ''),
     (
         'payment_truemoney_enabled',
         '1'

@@ -166,7 +166,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
 
                                         {user.role === 'owner' && (
                                             <DropdownMenuItem asChild>
-                                                <Link href="/admin/home"><LayoutDashboard className="text-black mr-2 h-4 w-4" />จัดการระบบ</Link>
+                                                <Link href="/admin"><LayoutDashboard className="text-black mr-2 h-4 w-4" />จัดการระบบ</Link>
                                             </DropdownMenuItem>
                                         )}
 

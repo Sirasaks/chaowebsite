@@ -68,10 +68,10 @@ JWT_SECRET=your-super-secret-jwt-key-change-this
 - `type`: 'account' | 'form' | 'api'
   - **account**: Pre-loaded items (e.g., accounts from text)
   - **form**: Custom form products
-  - **api**: Products from external APIs (Gafiw)
+  - **api**: Products from external APIs
 - `is_active`: 0 or 1 (controls visibility)
 - `is_recommended`: Show on homepage
-- `api_provider`: 'gafiw'
+- `api_provider`: Provider name (e.g. 'custom')
 
 ### Categories Table
 - `product_ids`: JSON array of product IDs in this category
@@ -86,11 +86,7 @@ Update in `settings` table or Admin Panel → Settings → Payment:
 - Enable/disable payment methods
 
 ### 2. Configure API Keys
-For external product APIs:
-```sql
-UPDATE settings SET setting_value = 'your_gafiw_key' WHERE setting_key = 'gafiw_api_key';
-UPDATE settings SET setting_value = 'your_gafiw_secret' WHERE setting_key = 'gafiw_api_secret';
-```
+For external product APIs, configure them in the settings table.
 
 ### 3. Add Products
 Go to Admin Panel → Products → Add products in each category

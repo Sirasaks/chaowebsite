@@ -20,7 +20,8 @@ import {
     Home,
     LogOut,
     MoreVertical,
-    Clock
+    Clock,
+    Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -147,12 +148,7 @@ export function AdminSidebar() {
                         href="/admin"
                         isActive={pathname === "/admin"}
                     />
-                    <SidebarItem
-                        icon={LayoutDashboard}
-                        label="จัดการหน้าแรก"
-                        href="/admin/home"
-                        isActive={pathname === "/admin/home"}
-                    />
+
                 </SidebarGroup>
 
                 <SidebarGroup title="คำสั่งซื้อ">
@@ -195,13 +191,23 @@ export function AdminSidebar() {
                         href="/admin/products/categories"
                         isActive={pathname.startsWith("/admin/products/categories")}
                     />
-                    <SidebarItem
-                        icon={Smartphone}
-                        label="แอพพรีเมี่ยม"
-                        href="/admin/products/apps"
-                        isActive={pathname.startsWith("/admin/products/apps")}
-                    />
 
+
+                </SidebarGroup>
+
+                <SidebarGroup title="สินค้าแนะนำ">
+                    <SidebarItem
+                        icon={Star}
+                        label="หมวดหมู่แนะนำ"
+                        href="/admin/products/recommended-categories"
+                        isActive={pathname === "/admin/products/recommended-categories"}
+                    />
+                    <SidebarItem
+                        icon={Star}
+                        label="สินค้าแนะนำ"
+                        href="/admin/products/recommended-products"
+                        isActive={pathname === "/admin/products/recommended-products"}
+                    />
                 </SidebarGroup>
 
                 <SidebarGroup title="การตั้งค่า">
@@ -267,6 +273,6 @@ export function AdminSidebar() {
                     กลับไปหน้าหลัก
                 </Link>
             </div>
-        </div>
+        </div >
     );
 }

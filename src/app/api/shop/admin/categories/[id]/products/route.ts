@@ -70,17 +70,25 @@ export async function GET(
             [categoryId, shopId]
         );
 
-        const selectedProductIds = new Set(
-            categoryRows.length > 0 && categoryRows[0].product_ids
-                ? JSON.parse(categoryRows[0].product_ids)
-                : []
-        );
+        const selectedProductIds = categoryRows.length > 0 && categoryRows[0].product_ids
+            ? JSON.parse(categoryRows[0].product_ids)
+            : [];
+
+        // Create a map for O(1) lookup of order
+        const orderMap = new Map();
+        if (Array.isArray(selectedProductIds)) {
+            selectedProductIds.forEach((id: number, index: number) => {
+                orderMap.set(id, index);
+            });
+        }
 
         const formattedProducts = productsWithRealTimeData.map((p: any) => {
             let stock = p.stock;
             if (p.type === 'account') {
                 stock = p.account ? p.account.split('\n').filter((line: string) => line.trim() !== '').length : 0;
             }
+
+            const isSelected = orderMap.has(p.id);
 
             return {
                 id: p.id,
@@ -90,9 +98,13 @@ export async function GET(
                 stock: stock,
                 sold: p.sold,
                 type: p.type,
-                isSelected: selectedProductIds.has(p.id)
+                isSelected: isSelected,
+                display_order: isSelected ? orderMap.get(p.id) : 999999 // Selected items keep order, others go to end
             };
         });
+
+        // Optional: Sort by display_order if you want the API to return sorted list
+        // formattedProducts.sort((a, b) => a.display_order - b.display_order);
 
         return NextResponse.json({ products: formattedProducts });
 

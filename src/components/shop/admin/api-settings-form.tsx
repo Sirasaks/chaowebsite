@@ -12,7 +12,7 @@ export function ApiSettingsForm() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [formData, setFormData] = useState({
-        gafiw_api_key: "",
+
         slipok_api_key: "",
         slipok_branch_id: "",
     });
@@ -24,7 +24,7 @@ export function ApiSettingsForm() {
                 if (res.ok) {
                     const data = await res.json();
                     setFormData({
-                        gafiw_api_key: data.gafiw_api_key || "",
+
                         slipok_api_key: data.slipok_api_key || "",
                         slipok_branch_id: data.slipok_branch_id || "",
                     });
@@ -87,18 +87,7 @@ export function ApiSettingsForm() {
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Gafiw Shop API</h3>
-                        <div className="grid gap-2">
-                            <Label htmlFor="gafiw_api_key">API Key</Label>
-                            <Input
-                                id="gafiw_api_key"
-                                name="gafiw_api_key"
-                                type="password"
-                                value={formData.gafiw_api_key}
-                                onChange={handleChange}
-                                placeholder="กรอก Gafiw API Key"
-                            />
-                        </div>
+
                     </div>
 
 
