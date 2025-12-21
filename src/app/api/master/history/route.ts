@@ -13,7 +13,12 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; role?: string };
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; role?: string; tokenType?: string };
+
+        // Verify this is a master token
+        if (decoded.tokenType && decoded.tokenType !== 'master') {
+            return NextResponse.json({ error: "Invalid token scope" }, { status: 401 });
+        }
 
         // Fetch shops owned by this master user
         // We fetch the order data associated with the shop creation from master_orders

@@ -34,9 +34,18 @@ export async function verifyShopSession(): Promise<boolean> {
     if (!token) return false;
 
     try {
-        jwt.verify(token, getJwtSecret());
-        // We could also check DB here but JWT valid is usually enough for redirecting away from login
-        return true;
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; tokenType?: string };
+
+        // Ensure it's a shop token
+        if (decoded.tokenType && decoded.tokenType !== 'shop') return false;
+
+        // Verify user still exists in database
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ?",
+            [decoded.userId]
+        );
+
+        return users.length > 0;
     } catch (error) {
         return false;
     }

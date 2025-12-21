@@ -49,16 +49,29 @@ export async function PUT(req: Request) {
         );
 
         if (existing.length > 0) {
-            // Update
-            await connection.query(
-                `UPDATE site_settings SET 
-                 site_title = ?, site_description = ?, site_icon = ?, site_logo = ?, 
-                 site_background = ?, primary_color = ?, secondary_color = ?, contact_link = ?, announcement_text = ?
-                 WHERE shop_id = ?`,
-                [site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text, shopId]
-            );
+            // Update only provided fields
+            const updates: string[] = [];
+            const params: any[] = [];
+
+            if (site_title !== undefined) { updates.push("site_title = ?"); params.push(site_title); }
+            if (site_description !== undefined) { updates.push("site_description = ?"); params.push(site_description); }
+            if (site_icon !== undefined) { updates.push("site_icon = ?"); params.push(site_icon); }
+            if (site_logo !== undefined) { updates.push("site_logo = ?"); params.push(site_logo); }
+            if (site_background !== undefined) { updates.push("site_background = ?"); params.push(site_background); }
+            if (primary_color !== undefined) { updates.push("primary_color = ?"); params.push(primary_color); }
+            if (secondary_color !== undefined) { updates.push("secondary_color = ?"); params.push(secondary_color); }
+            if (contact_link !== undefined) { updates.push("contact_link = ?"); params.push(contact_link); }
+            if (announcement_text !== undefined) { updates.push("announcement_text = ?"); params.push(announcement_text); }
+
+            if (updates.length > 0) {
+                params.push(shopId);
+                await connection.query(
+                    `UPDATE site_settings SET ${updates.join(", ")} WHERE shop_id = ?`,
+                    params
+                );
+            }
         } else {
-            // Insert
+            // Insert with provided values (others will be NULL/default)
             await connection.query(
                 `INSERT INTO site_settings (shop_id, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

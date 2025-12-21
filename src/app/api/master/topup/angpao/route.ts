@@ -104,7 +104,22 @@ export async function POST(request: Request) {
 
         let userId: number;
         try {
-            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; tokenType?: string };
+
+            // Verify this is a master token
+            if (decoded.tokenType && decoded.tokenType !== 'master') {
+                return NextResponse.json({ error: "Token ไม่ถูกต้อง (Invalid scope)" }, { status: 401 });
+            }
+
+            // Verify user exists in master_users
+            const [userCheck] = await connection.query<RowDataPacket[]>(
+                "SELECT id FROM master_users WHERE id = ?",
+                [decoded.userId]
+            );
+            if (userCheck.length === 0) {
+                return NextResponse.json({ error: "User not found" }, { status: 401 });
+            }
+
             userId = decoded.userId;
         } catch (err) {
             return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
