@@ -19,17 +19,16 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, List, Save, ArrowUpDown } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, List, Save, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Category } from "@/lib/category-service";
 import { CategoryTableSkeleton } from "@/components/shop/admin/CategoryTableSkeleton";
 import { ReorderDialog } from "@/components/shop/admin/ReorderDialog";
-import { TransferOrderingDialog } from "@/components/shop/admin/TransferOrderingDialog";
 import axios from "axios";
 
-// Helper for Product Dialog content
-const CategoryProductsManager = ({
+// Helper for Product Reorder Dialog
+const CategoryProductsReorder = ({
     category,
     open,
     onOpenChange
@@ -40,6 +39,7 @@ const CategoryProductsManager = ({
 }) => {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (open && category) {
@@ -55,45 +55,122 @@ const CategoryProductsManager = ({
             const res = await fetch(`/api/shop/admin/categories/${category?.id}/products`);
             if (!res.ok) throw new Error("Failed to fetch products");
             const data = await res.json();
-            setProducts(data.products);
+            setProducts(data.products.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)));
         } catch (error) {
             console.error(error);
-            toast.error("Failed to load products");
+            toast.error("ไม่สามารถโหลดรายการสินค้าได้");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async (selectedItems: any[]) => {
+    const moveUp = (index: number) => {
+        if (index === 0) return;
+        const newItems = [...products];
+        [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+        setProducts(newItems);
+    };
+
+    const moveDown = (index: number) => {
+        if (index === products.length - 1) return;
+        const newItems = [...products];
+        [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+        setProducts(newItems);
+    };
+
+    const handleSave = async () => {
         if (!category) return;
+        setSaving(true);
         try {
-            const selectedIds = selectedItems.map(p => p.id);
+            const productOrders = products.map((p, index) => ({
+                id: p.id,
+                display_order: index
+            }));
+
             const res = await fetch(`/api/shop/admin/categories/${category.id}/products`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productIds: selectedIds }), // Order is preserved in array
+                body: JSON.stringify({ productOrders }),
             });
 
             if (!res.ok) throw new Error("Failed to save");
-            toast.success("บันทึกรายการสินค้าเรียบร้อย");
+            toast.success("บันทึกลำดับสินค้าเรียบร้อย");
             onOpenChange(false);
         } catch (error) {
             console.error(error);
             toast.error("บันทึกไม่สำเร็จ");
-            throw error; // Let the dialog handle loading state or error
+        } finally {
+            setSaving(false);
         }
     };
 
-    if (!open && !loading) return null;
+    if (!open) return null;
 
     return (
-        <TransferOrderingDialog
-            title={`จัดการสินค้าในหมวดหมู่: ${category?.name}`}
-            open={open}
-            onOpenChange={onOpenChange}
-            items={products}
-            onSave={handleSave}
-        />
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>จัดเรียงสินค้าในหมวดหมู่: {category?.name}</DialogTitle>
+                </DialogHeader>
+
+                {loading ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                        ไม่มีสินค้าในหมวดหมู่นี้
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2 border rounded-md bg-slate-50">
+                        {products.map((item, index) => (
+                            <div key={item.id} className="flex items-center gap-2 p-2 bg-white border rounded shadow-sm">
+                                <div className="text-slate-400 font-bold w-6 text-center">{index + 1}</div>
+
+                                {item.image ? (
+                                    <div className="relative w-10 h-10 rounded overflow-hidden bg-slate-200 shrink-0">
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    </div>
+                                ) : (
+                                    <div className="w-10 h-10 rounded bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 shrink-0">No Img</div>
+                                )}
+
+                                <span className="text-sm font-medium flex-1">{item.name}</span>
+
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 hover:bg-slate-100"
+                                        disabled={index === 0}
+                                        onClick={() => moveUp(index)}
+                                    >
+                                        <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 hover:bg-slate-100"
+                                        disabled={index === products.length - 1}
+                                        onClick={() => moveDown(index)}
+                                    >
+                                        <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <DialogFooter className="mt-4 flex-shrink-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>ยกเลิก</Button>
+                    <Button onClick={handleSave} disabled={saving || products.length === 0}>
+                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        บันทึก
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -371,7 +448,7 @@ export default function AdminCategoriesPage() {
                 </DialogContent>
             </Dialog>
 
-            <CategoryProductsManager
+            <CategoryProductsReorder
                 category={productDialogCategory}
                 open={!!productDialogCategory}
                 onOpenChange={(open) => !open && setProductDialogCategory(null)}

@@ -32,7 +32,7 @@ export default async function CategoryPage({ params }: PageProps) {
     notFound();
   }
 
-  let products = await getProductsByCategoryId(category.id);
+  let products = await getProductsByCategoryId(category.id, shopId || 0);
   // mergeRealTimeStock removed
   // products = await mergeRealTimeStock(products);
 

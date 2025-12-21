@@ -23,8 +23,12 @@ export async function GET(request: Request) {
         }
 
         try {
-            const decoded = jwt.verify(token, getJwtSecret()) as { role?: string };
-            if (decoded.role !== 'owner') {
+            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
+            const [users] = await pool.query<RowDataPacket[]>(
+                "SELECT role FROM users WHERE id = ? AND shop_id = ?",
+                [decoded.userId, shopId]
+            );
+            if (users.length === 0 || users[0].role !== 'owner') {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });
             }
         } catch (err) {

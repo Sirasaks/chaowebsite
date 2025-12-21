@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     );
 
     const token = jwt.sign(
-      { userId: (result as any).insertId, tokenType: 'shop' },
+      { userId: (result as any).insertId, role: 'user', tokenType: 'shop' },
       getJwtSecret(),
       { expiresIn: "7d" }
     );

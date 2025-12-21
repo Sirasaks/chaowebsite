@@ -17,36 +17,26 @@ export interface Product {
     sold?: number;
 }
 
-export async function getProductsByCategoryId(categoryId: number): Promise<Product[]> {
+export async function getProductsByCategoryId(categoryId: number, shopId: number): Promise<Product[]> {
     try {
-        // ดึง product_ids จาก category
-        const [categoryRows] = await pool.query<RowDataPacket[]>(
-            "SELECT product_ids FROM categories WHERE id = ?",
-            [categoryId]
-        );
-
-        if (categoryRows.length === 0 || !categoryRows[0].product_ids) {
-            return [];
-        }
-
-        const productIds = JSON.parse(categoryRows[0].product_ids);
-
-        if (productIds.length === 0) {
-            return [];
-        }
-
-        // ดึงสินค้าที่อยู่ใน product_ids และเปิดใช้งาน
+        // Fetch products that have this category_id AND belong to this shop
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT p.*,
              (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
              FROM products p
-             WHERE p.id IN (?) AND p.is_active = 1
-             ORDER BY p.created_at ASC`,
-            [productIds]
+             WHERE p.category_id = ? AND p.shop_id = ? AND p.is_active = 1
+             ORDER BY p.display_order ASC, p.created_at DESC`,
+            [categoryId, shopId]
         );
 
-        // Initialize stock to 0 as it's no longer in DB
-        return rows.map(row => ({ ...row, stock: 0 })) as Product[];
+        // Calculate stock for account type products
+        return rows.map(row => {
+            let stock = 0;
+            if (row.type === 'account' && row.account) {
+                stock = row.account.split('\\n').filter((line: string) => line.trim() !== '').length;
+            }
+            return { ...row, stock } as Product;
+        });
     } catch (error) {
         console.error(`Error fetching products for category ${categoryId}:`, error);
         return [];

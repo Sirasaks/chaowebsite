@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     if (user.role !== decoded.role) {
       // Generate new token with updated role
       const newToken = jwt.sign(
-        { userId: user.id, role: user.role },
+        { userId: user.id, role: user.role, tokenType: 'shop' },
         secret,
         { expiresIn: "7d" }
       );

@@ -50,45 +50,22 @@ export async function GET(
             return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });
         }
 
-        // ดึงสินค้าทั้งหมด
+        // Fetch only products that belong to this category
         const [products] = await connection.query<RowDataPacket[]>(
             `SELECT 
-                p.id, p.name, p.image, p.price, p.account, 0 as stock, p.type,
+                p.id, p.name, p.image, p.price, p.account, p.type, p.display_order,
                 (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed' AND shop_id = p.shop_id) as sold
              FROM products p 
-             WHERE p.shop_id = ?
-             ORDER BY p.created_at DESC`,
-            [shopId]
+             WHERE p.shop_id = ? AND p.category_id = ? AND p.is_active = 1
+             ORDER BY p.display_order ASC, p.created_at DESC`,
+            [shopId, categoryId]
         );
 
-        // Merge logic removed
-        let productsWithRealTimeData = products;
-
-        // ดึง product_ids จาก category
-        const [categoryRows] = await connection.query<RowDataPacket[]>(
-            "SELECT product_ids FROM categories WHERE id = ? AND shop_id = ?",
-            [categoryId, shopId]
-        );
-
-        const selectedProductIds = categoryRows.length > 0 && categoryRows[0].product_ids
-            ? JSON.parse(categoryRows[0].product_ids)
-            : [];
-
-        // Create a map for O(1) lookup of order
-        const orderMap = new Map();
-        if (Array.isArray(selectedProductIds)) {
-            selectedProductIds.forEach((id: number, index: number) => {
-                orderMap.set(id, index);
-            });
-        }
-
-        const formattedProducts = productsWithRealTimeData.map((p: any) => {
-            let stock = p.stock;
+        const formattedProducts = products.map((p: any) => {
+            let stock = 0;
             if (p.type === 'account') {
                 stock = p.account ? p.account.split('\n').filter((line: string) => line.trim() !== '').length : 0;
             }
-
-            const isSelected = orderMap.has(p.id);
 
             return {
                 id: p.id,
@@ -98,13 +75,9 @@ export async function GET(
                 stock: stock,
                 sold: p.sold,
                 type: p.type,
-                isSelected: isSelected,
-                display_order: isSelected ? orderMap.get(p.id) : 999999 // Selected items keep order, others go to end
+                display_order: p.display_order || 0
             };
         });
-
-        // Optional: Sort by display_order if you want the API to return sorted list
-        // formattedProducts.sort((a, b) => a.display_order - b.display_order);
 
         return NextResponse.json({ products: formattedProducts });
 
@@ -133,25 +106,32 @@ export async function POST(
         const resolvedParams = await context.params;
         const categoryId = parseInt(resolvedParams.id);
         const body = await request.json();
-        const { productIds } = body;
+        const { productOrders } = body; // Array of { id, display_order }
 
         if (isNaN(categoryId)) {
             return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });
         }
 
-        if (!Array.isArray(productIds)) {
-            return NextResponse.json({ error: "productIds must be an array" }, { status: 400 });
+        if (!Array.isArray(productOrders)) {
+            return NextResponse.json({ error: "productOrders must be an array" }, { status: 400 });
         }
 
-        // บันทึก product_ids เป็น JSON
-        await connection.query(
-            "UPDATE categories SET product_ids = ? WHERE id = ? AND shop_id = ?",
-            [JSON.stringify(productIds), categoryId, shopId]
-        );
+        // Update display_order for each product (ensure they belong to this shop and category)
+        await connection.beginTransaction();
 
-        return NextResponse.json({ message: "Category products updated successfully" });
+        for (const item of productOrders) {
+            await connection.query(
+                "UPDATE products SET display_order = ? WHERE id = ? AND shop_id = ? AND category_id = ?",
+                [item.display_order, item.id, shopId, categoryId]
+            );
+        }
+
+        await connection.commit();
+
+        return NextResponse.json({ message: "Product order updated successfully" });
 
     } catch (error) {
+        await connection.rollback();
         console.error("Update Category Products Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     } finally {

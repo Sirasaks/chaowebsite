@@ -31,13 +31,22 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Plus, Pencil, Trash2, Search, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Product } from "@/lib/product-service";
 import { ProductTableSkeleton } from "@/components/shop/admin/ProductTableSkeleton";
+import { Category } from "@/lib/category-service";
 
 export default function AdminAccountsPage() {
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -48,6 +57,7 @@ export default function AdminAccountsPage() {
         image: "",
         description: "",
         account: "",
+        category_id: "",
     });
     const [submitting, setSubmitting] = useState(false);
     const [search, setSearch] = useState("");
@@ -55,10 +65,17 @@ export default function AdminAccountsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/shop/admin/products?type=account");
-            if (res.ok) {
-                const data = await res.json();
+            const [productsRes, categoriesRes] = await Promise.all([
+                fetch("/api/shop/admin/products?type=account"),
+                fetch("/api/shop/admin/categories")
+            ]);
+            if (productsRes.ok) {
+                const data = await productsRes.json();
                 setProducts(data.products);
+            }
+            if (categoriesRes.ok) {
+                const data = await categoriesRes.json();
+                setCategories(data.categories);
             }
         } catch (error) {
             console.error(error);
@@ -72,7 +89,7 @@ export default function AdminAccountsPage() {
         fetchData();
     }, []);
 
-    const handleOpenDialog = (product?: Product) => {
+    const handleOpenDialog = (product?: Product & { category_id?: number }) => {
         if (product) {
             setEditingProduct(product);
             setFormData({
@@ -81,6 +98,7 @@ export default function AdminAccountsPage() {
                 image: product.image,
                 description: product.description,
                 account: product.account || "",
+                category_id: product.category_id ? String(product.category_id) : "",
             });
         } else {
             setEditingProduct(null);
@@ -90,6 +108,7 @@ export default function AdminAccountsPage() {
                 image: "",
                 description: "",
                 account: "",
+                category_id: "",
             });
         }
         setIsDialogOpen(true);
@@ -111,7 +130,7 @@ export default function AdminAccountsPage() {
                 ...formData,
                 type: "account",
                 id: editingProduct?.id,
-                category_id: null, // No category for accounts
+                category_id: formData.category_id ? parseInt(formData.category_id) : null,
             };
 
             const res = await fetch("/api/shop/admin/products", {
@@ -330,6 +349,26 @@ export default function AdminAccountsPage() {
                             <p className="text-xs text-muted-foreground">
                                 จำนวนสินค้าจะเท่ากับจำนวนบรรทัดที่กรอก
                             </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>หมวดหมู่</Label>
+                            <Select
+                                value={formData.category_id}
+                                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="เลือกหมวดหมู่ (ไม่บังคับ)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">ไม่มีหมวดหมู่</SelectItem>
+                                    {categories.map((category) => (
+                                        <SelectItem key={category.id} value={String(category.id)}>
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="flex justify-end gap-2 pt-4">

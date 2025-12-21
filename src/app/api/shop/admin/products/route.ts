@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { name, price, image, description, type, account, is_recommended, display_order, is_active } = body;
+        const { name, price, image, description, type, account, is_recommended, display_order, is_active, category_id } = body;
 
         if (!name || !price || !type) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -112,9 +112,20 @@ export async function POST(request: Request) {
             counter++;
         }
 
+        // Validate category_id belongs to this shop
+        if (category_id) {
+            const [categoryRows] = await connection.query<RowDataPacket[]>(
+                "SELECT id FROM categories WHERE id = ? AND shop_id = ?",
+                [category_id, shopId]
+            );
+            if (categoryRows.length === 0) {
+                return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+            }
+        }
+
         const [result] = await connection.query<ResultSetHeader>(
-            `INSERT INTO products (shop_id, name, slug, price, image, description, type, account, is_recommended, display_order, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO products (shop_id, name, slug, price, image, description, type, account, is_recommended, display_order, is_active, category_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 shopId,
                 name,
@@ -126,7 +137,8 @@ export async function POST(request: Request) {
                 account || "",
                 is_recommended || false,
                 display_order || 0,
-                is_active !== undefined ? is_active : 1
+                is_active !== undefined ? is_active : 1,
+                category_id || null
             ]
         );
 
@@ -152,7 +164,7 @@ export async function PUT(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { id, name, price, image, description, account, is_recommended, display_order, is_active } = body;
+        const { id, name, price, image, description, account, is_recommended, display_order, is_active, category_id } = body;
 
         if (!id) {
             return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
@@ -170,6 +182,19 @@ export async function PUT(request: Request) {
         if (is_recommended !== undefined) { updates.push("is_recommended = ?"); params.push(is_recommended); }
         if (display_order !== undefined) { updates.push("display_order = ?"); params.push(display_order); }
         if (is_active !== undefined) { updates.push("is_active = ?"); params.push(is_active); }
+        if (category_id !== undefined) {
+            // Validate category_id belongs to this shop (null is allowed to remove category)
+            if (category_id !== null) {
+                const [categoryRows] = await connection.query<RowDataPacket[]>(
+                    "SELECT id FROM categories WHERE id = ? AND shop_id = ?",
+                    [category_id, shopId]
+                );
+                if (categoryRows.length === 0) {
+                    return NextResponse.json({ error: "Invalid category" }, { status: 400 });
+                }
+            }
+            updates.push("category_id = ?"); params.push(category_id);
+        }
 
         if (updates.length === 0) {
             return NextResponse.json({ error: "No fields to update" }, { status: 400 });
