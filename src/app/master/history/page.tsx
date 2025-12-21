@@ -2,10 +2,22 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ExternalLink, ShoppingBag, Calendar, User, Key, Loader2 } from "lucide-react"
+import {
+    ExternalLink,
+    Store,
+    Calendar,
+    User,
+    Key,
+    Loader2,
+    Clock,
+    Globe,
+    Copy,
+    Check,
+    AlertCircle
+} from "lucide-react"
 import Link from "next/link"
 
 interface Shop {
@@ -22,6 +34,7 @@ export default function MasterHistoryPage() {
     const [shops, setShops] = useState<Shop[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [copiedId, setCopiedId] = useState<number | null>(null)
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -49,24 +62,10 @@ export default function MasterHistoryPage() {
         }
     }, [user, authLoading])
 
-    if (authLoading || (loading && user)) {
-        return (
-            <div className="flex h-[50vh] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
-
-    if (!user) {
-        return (
-            <div className="container mx-auto py-10 text-center">
-                <h1 className="text-2xl font-bold">กรุณาเข้าสู่ระบบ</h1>
-                <p className="text-muted-foreground mt-2">คุณต้องเข้าสู่ระบบเพื่อดูประวัติการสั่งซื้อ</p>
-                <Button asChild className="mt-4">
-                    <Link href="/login">เข้าสู่ระบบ</Link>
-                </Button>
-            </div>
-        )
+    const copyToClipboard = (text: string, id: number) => {
+        navigator.clipboard.writeText(text)
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
     }
 
     const getCredentials = (orderData: string | null) => {
@@ -82,95 +81,182 @@ export default function MasterHistoryPage() {
         }
     }
 
-    return (
-        <div className="container mx-auto py-8 px-4">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">ประวัติการสั่งซื้อ</h1>
-                <p className="text-muted-foreground mt-2">
-                    รายการร้านค้าที่คุณได้ทำการสั่งซื้อและเป็นเจ้าของ
-                </p>
+    const getDaysRemaining = (expireDate: string) => {
+        const now = new Date()
+        const expire = new Date(expireDate)
+        const diff = expire.getTime() - now.getTime()
+        return Math.ceil(diff / (1000 * 60 * 60 * 24))
+    }
+
+    if (authLoading || (loading && user)) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+        )
+    }
 
-            {error && (
-                <div className="bg-destructive/15 text-destructive p-4 rounded-md mb-6">
-                    {error}
-                </div>
-            )}
-
-            {!loading && shops.length === 0 ? (
-                <div className="text-center py-12 border rounded-lg bg-slate-50">
-                    <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">ยังไม่มีประวัติการสั่งซื้อ</h3>
-                    <p className="text-muted-foreground mt-2">คุณยังไม่ได้ทำการเปิดร้านค้าใดๆ</p>
+    if (!user) {
+        return (
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                        <User className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-slate-900">กรุณาเข้าสู่ระบบ</h1>
+                    <p className="text-slate-500 mt-2">คุณต้องเข้าสู่ระบบเพื่อดูประวัติการสั่งซื้อ</p>
                     <Button asChild className="mt-6">
-                        <Link href="/packages">ดูแพ็คเกจเปิดร้าน</Link>
+                        <Link href="/login">เข้าสู่ระบบ</Link>
                     </Button>
                 </div>
-            ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {shops.map((shop) => {
-                        const { username, password } = getCredentials(shop.order_data)
-                        return (
-                            <Card key={shop.id} className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader className="bg-slate-50/50 pb-4">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <CardTitle className="text-xl">{shop.name}</CardTitle>
-                                            <CardDescription className="mt-1 flex items-center gap-1">
-                                                <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded">
-                                                    {shop.subdomain}
-                                                </span>
-                                            </CardDescription>
-                                        </div>
-                                        <Badge variant={new Date(shop.expire_date) > new Date() ? "default" : "destructive"}>
-                                            {new Date(shop.expire_date) > new Date() ? "Active" : "Expired"}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-6 space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="text-sm font-medium text-muted-foreground mb-2">ข้อมูลผู้ดูแลระบบ</div>
-                                        <div className="flex items-center justify-between p-2 bg-slate-50 rounded border text-sm">
-                                            <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-muted-foreground">Username:</span>
-                                            </div>
-                                            <span className="font-mono font-medium">{username}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between p-2 bg-slate-50 rounded border text-sm">
-                                            <div className="flex items-center gap-2">
-                                                <Key className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-muted-foreground">Password:</span>
-                                            </div>
-                                            <span className="font-mono font-medium">{password}</span>
-                                        </div>
-                                    </div>
+            </div>
+        )
+    }
 
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-                                        <Calendar className="h-3 w-3" />
-                                        <span>หมดอายุ: {new Date(shop.expire_date).toLocaleDateString('th-TH')}</span>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="bg-slate-50/50 pt-4">
-                                    <Button asChild className="w-full" variant="outline">
-                                        <a
-                                            href={process.env.NODE_ENV === 'development'
-                                                ? `http://${shop.subdomain}.localhost:3000`
-                                                : `https://${shop.subdomain}.chaoweb.site`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2"
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                            ไปที่ร้านค้า
-                                        </a>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        )
-                    })}
+    return (
+        <div className="min-h-screen bg-slate-50">
+            <div className="max-w-6xl mx-auto py-12 px-6">
+                {/* Header */}
+                <div className="mb-10">
+                    <h1 className="text-3xl font-bold text-slate-900">ร้านค้าของฉัน</h1>
+                    <p className="text-slate-500 mt-2">รายการร้านค้าที่คุณเปิดใช้งาน</p>
                 </div>
-            )}
+
+                {error && (
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5" />
+                        {error}
+                    </div>
+                )}
+
+                {!loading && shops.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-2xl border">
+                        <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-6">
+                            <Store className="h-10 w-10 text-slate-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-slate-900">ยังไม่มีร้านค้า</h3>
+                        <p className="text-slate-500 mt-2">คุณยังไม่ได้เปิดร้านค้าใดๆ</p>
+                        <Button asChild className="mt-6">
+                            <Link href="/shop">เปิดร้านค้าเลย</Link>
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {shops.map((shop, index) => {
+                            const { username, password } = getCredentials(shop.order_data)
+                            const daysRemaining = getDaysRemaining(shop.expire_date)
+                            const isExpired = daysRemaining <= 0
+                            const isWarning = daysRemaining > 0 && daysRemaining <= 7
+
+                            return (
+                                <Card
+                                    key={shop.id}
+                                    className={`bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${isExpired ? "opacity-75" : ""}`}
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                >
+                                    <CardContent className="p-0">
+                                        <div className="flex flex-col lg:flex-row">
+                                            {/* Left Section - Shop Info */}
+                                            <div className="flex-1 p-6">
+                                                <div className="flex items-start justify-between mb-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                                                            <Store className="h-6 w-6 text-primary" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold text-slate-900">{shop.name}</h3>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <Globe className="h-3.5 w-3.5 text-slate-400" />
+                                                                <span className="text-sm text-slate-500">{shop.subdomain}.chaoweb.site</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <Badge
+                                                        variant={isExpired ? "destructive" : isWarning ? "warning" : "success"}
+                                                        className="shrink-0"
+                                                    >
+                                                        {isExpired ? "หมดอายุ" : isWarning ? `เหลือ ${daysRemaining} วัน` : "Active"}
+                                                    </Badge>
+                                                </div>
+
+                                                {/* Credentials */}
+                                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                                    <div className="bg-slate-50 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                                                            <User className="h-3 w-3" />
+                                                            Username
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-mono text-sm font-medium">{username}</span>
+                                                            <button
+                                                                onClick={() => copyToClipboard(username, shop.id * 10 + 1)}
+                                                                className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                                            >
+                                                                {copiedId === shop.id * 10 + 1 ? (
+                                                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                                                ) : (
+                                                                    <Copy className="h-3.5 w-3.5 text-slate-400" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-slate-50 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                                                            <Key className="h-3 w-3" />
+                                                            Password
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-mono text-sm font-medium">{password}</span>
+                                                            <button
+                                                                onClick={() => copyToClipboard(password, shop.id * 10 + 2)}
+                                                                className="p-1 hover:bg-slate-200 rounded transition-colors"
+                                                            >
+                                                                {copiedId === shop.id * 10 + 2 ? (
+                                                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                                                ) : (
+                                                                    <Copy className="h-3.5 w-3.5 text-slate-400" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Dates */}
+                                                <div className="flex items-center gap-6 text-xs text-slate-500">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        <span>สร้างเมื่อ {new Date(shop.created_at).toLocaleDateString('th-TH')}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                        <span>หมดอายุ {new Date(shop.expire_date).toLocaleDateString('th-TH')}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Right Section - Action */}
+                                            <div className="lg:w-48 p-6 lg:border-l bg-slate-50/50 flex items-center justify-center">
+                                                <Button asChild className="w-full" variant={isExpired ? "outline" : "default"}>
+                                                    <a
+                                                        href={process.env.NODE_ENV === 'development'
+                                                            ? `http://${shop.subdomain}.localhost:3000`
+                                                            : `https://${shop.subdomain}.chaoweb.site`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                                        {isExpired ? "ดูร้านค้า" : "จัดการร้าน"}
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
