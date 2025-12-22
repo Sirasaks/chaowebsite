@@ -69,8 +69,8 @@ export default function MasterLoginPage() {
         <main className="flex items-start justify-center p-4 pt-8 md:pt-16">
             <Card className="w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle>เข้าสู่ระบบ (Master)</CardTitle>
-                    <CardDescription>สำหรับเจ้าของร้านค้า</CardDescription>
+                    <CardTitle>เข้าสู่ระบบ</CardTitle>
+                    <CardDescription>ยินดีต้อนรับกลับมา! กรุณาเข้าสู่ระบบ</CardDescription>
                 </CardHeader>
 
                 <CardContent>
@@ -91,6 +91,9 @@ export default function MasterLoginPage() {
                             <div className="grid gap-2">
                                 <div className="flex items-center">
                                     <Label htmlFor="password">รหัสผ่าน</Label>
+                                    <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
+                                        ลืมรหัสผ่าน?
+                                    </Link>
                                 </div>
                                 <Input
                                     id="password"
@@ -119,7 +122,7 @@ export default function MasterLoginPage() {
 
                 <CardFooter className="flex-col pt-0">
                     <div className="mt-4 text-center text-sm">
-                        ยังไม่มีบัญชี? <Link href="/register" className="underline">เปิดร้านค้าใหม่</Link>
+                        ยังไม่มีบัญชี? <Link href="/register" className="underline">สมัครสมาชิก</Link>
                     </div>
                 </CardFooter>
             </Card>

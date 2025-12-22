@@ -80,17 +80,17 @@ export default function MasterRegisterPage() {
 
     return (
         <main className="flex items-start justify-center p-4 pt-8 md:pt-16">
-            <Card className="w-full max-w-md">
+            <Card className="w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle>สมัครสมาชิก (Master)</CardTitle>
-                    <CardDescription>กรอกข้อมูลเพื่อเริ่มต้นใช้งาน</CardDescription>
+                    <CardTitle>สร้างบัญชีใหม่</CardTitle>
+                    <CardDescription>กรอกข้อมูลด้านล่างเพื่อเริ่มต้นใช้งาน</CardDescription>
                 </CardHeader>
 
                 <CardContent>
                     <form onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="username">ชื่อผู้ใช้ (Owner)</Label>
+                                <Label htmlFor="username">ชื่อผู้ใช้</Label>
                                 <Input
                                     id="username"
                                     type="text"
@@ -149,13 +149,22 @@ export default function MasterRegisterPage() {
 
                         <div className="pt-6">
                             <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
+                                {isSubmitting ? "กำลังสมัคร..." : "สมัครสมาชิก"}
                             </Button>
                         </div>
                     </form>
                 </CardContent>
 
                 <CardFooter className="flex-col gap-4 pt-0">
+                    <div className="relative w-full">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">หรือ</span>
+                        </div>
+                    </div>
+
                     <div className="mt-4 text-center text-sm">
                         มีบัญชีอยู่แล้ว? <Link href="/login" className="underline">เข้าสู่ระบบ</Link>
                     </div>

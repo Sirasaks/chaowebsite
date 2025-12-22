@@ -50,3 +50,27 @@ export async function verifyShopSession(): Promise<boolean> {
         return false;
     }
 }
+
+export async function verifyMasterSession(): Promise<boolean> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) return false;
+
+    try {
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; tokenType?: string };
+
+        // Ensure it's a master token
+        if (decoded.tokenType !== 'master') return false;
+
+        // Verify user still exists in database
+        const [users] = await pool.query<RowDataPacket[]>(
+            "SELECT id FROM master_users WHERE id = ?",
+            [decoded.userId]
+        );
+
+        return users.length > 0;
+    } catch (error) {
+        return false;
+    }
+}

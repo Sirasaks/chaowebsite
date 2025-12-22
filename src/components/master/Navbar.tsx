@@ -77,7 +77,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                         <div className="hidden md:flex items-center space-x-1">
                             <Link href="/"><Button variant="ghost" className={pathname === "/" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Home className="mr-2 h-4 w-4" />หน้าแรก</Button></Link>
                             <Link href="/topup"><Button variant="ghost" className={pathname?.startsWith("/topup") ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Wallet className="mr-2 h-4 w-4" />เติมเงิน</Button></Link>
-                            <Link href="/shop"><Button variant="ghost" className={pathname === "/shop" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ</Button></Link>
+                            <Link href="/shop"><Button variant="ghost" className={pathname === "/shop" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><ShoppingBag className="mr-2 h-4 w-4" />เช่าเว็บไซต์</Button></Link>
                             <Link href="/contact"><Button variant="ghost" className={pathname === "/contact" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><PhoneIcon className="mr-2 h-4 w-4" />ติดต่อเรา</Button></Link>
                         </div>
                     </div>
@@ -106,7 +106,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href="/shop" className="cursor-pointer">
-                                        <ShoppingBag className="mr-2 h-4 w-4" />แพ็คเกจ
+                                        <ShoppingBag className="mr-2 h-4 w-4" />เช่าเว็บไซต์
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>

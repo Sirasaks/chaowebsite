@@ -3,18 +3,12 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
-import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-    const shopId = await getShopIdFromRequest(request);
-    if (!shopId) {
-        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
-    }
-
-    // Rate limiting: 3 attempts per minute per IP per shop
+    // Rate limiting: 3 attempts per minute per IP
     const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
-    const { success } = rateLimit(`shop-forgot:${shopId}:${ip}`, { limit: 3, windowMs: 60000 });
+    const { success } = rateLimit(`master-forgot:${ip}`, { limit: 3, windowMs: 60000 });
 
     if (!success) {
         return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
@@ -28,10 +22,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "กรุณากรอกอีเมล" }, { status: 400 });
         }
 
-        // 1. Check if user exists IN THIS SHOP
+        // 1. Check if master user exists
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM users WHERE email = ? AND shop_id = ?",
-            [email, shopId]
+            "SELECT id FROM master_users WHERE email = ?",
+            [email]
         );
 
         if (users.length === 0) {
@@ -42,40 +36,35 @@ export async function POST(request: Request) {
         // 2. Generate Token
         const token = crypto.randomBytes(32).toString("hex");
 
-        // 3. Save to DB (password_resets table might need shop_id too? Or just email/token is enough?)
-        // The password_resets table structure is: email, token, created_at.
-        // It doesn't have shop_id.
-        // However, since email + shop_id is unique, and we verified the email exists in this shop...
-        // Wait, if same email exists in Shop A and Shop B.
-        // User requests reset for Shop A.
-        // We insert (email, token).
-        // User clicks link.
-        // Reset API updates password for `email`.
-        // IT WILL UPDATE FOR BOTH SHOPS!
-        // This is a problem. `password_resets` needs `shop_id` OR the reset logic needs to know the shop.
-        // But the reset link is clicked in a browser, likely on the shop's domain.
-        // So the Reset API will know the shop from the domain.
-        // So we just need to ensure the Reset API uses the shop_id from the domain to filter the user update.
-
-        // Self-healing: Ensure table has shop_id
+        // 3. Self-healing: Ensure master_password_resets table exists
         try {
-            const [columns] = await connection.query<RowDataPacket[]>("SHOW COLUMNS FROM password_resets LIKE 'shop_id'");
-            if (columns.length === 0) {
-                await connection.query("ALTER TABLE password_resets ADD COLUMN shop_id INT NOT NULL DEFAULT 0");
-                await connection.query("ALTER TABLE password_resets ADD INDEX idx_token_shop (token, shop_id)");
-            }
+            await connection.query(`
+                CREATE TABLE IF NOT EXISTS master_password_resets (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    token VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_token (token),
+                    INDEX idx_email (email)
+                )
+            `);
         } catch (err) {
-            // Ignore error
+            // Ignore error if table already exists
         }
 
+        // 4. Delete any existing tokens for this email
         await connection.query(
-            "INSERT INTO password_resets (email, token, shop_id) VALUES (?, ?, ?)",
-            [email, token, shopId]
+            "DELETE FROM master_password_resets WHERE email = ?",
+            [email]
         );
 
-        // 4. Send Email
-        // We should probably include the shop domain in the link to ensure they reset on the correct shop.
-        // The `request.headers.get("host")` should give us the shop domain.
+        // 5. Save new token
+        await connection.query(
+            "INSERT INTO master_password_resets (email, token) VALUES (?, ?)",
+            [email, token]
+        );
+
+        // 6. Send Email
         const host = request.headers.get("host");
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
         const resetLink = `${protocol}://${host}/reset-password?token=${token}`;
@@ -83,7 +72,7 @@ export async function POST(request: Request) {
         try {
             await sendMail({
                 to: email,
-                subject: "รีเซ็ตรหัสผ่าน - My Shop",
+                subject: "รีเซ็ตรหัสผ่าน - ChaoWeb",
                 html: `
                     <h1>รีเซ็ตรหัสผ่าน</h1>
                     <p>คุณได้ทำการร้องขอให้รีเซ็ตรหัสผ่าน กรุณาคลิกลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่:</p>
@@ -93,7 +82,7 @@ export async function POST(request: Request) {
             });
         } catch (mailError) {
             console.error("Failed to send email:", mailError);
-            // Log link as fallback if email fails (e.g. missing config)
+            // Log link as fallback if email fails
             console.log("Fallback Reset Link:", resetLink);
         }
 

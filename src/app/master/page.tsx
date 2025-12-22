@@ -247,28 +247,6 @@ export default function MasterPage() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 bg-slate-900">
-                <div className="max-w-3xl mx-auto px-6 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-4">
-                        พร้อมเริ่มต้นแล้วหรือยัง?
-                    </h2>
-                    <p className="text-lg text-slate-400 mb-8">
-                        สมัครวันนี้ และเริ่มสร้างร้านค้าออนไลน์ของคุณได้ทันที
-                    </p>
-                    <div className="flex gap-4 justify-center">
-                        <Link href="/register">
-                            <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100 hover:scale-105 transition-all">
-                                เริ่มต้นใช้งาน
-                            </Button>
-                        </Link>
-                        <Link href="/login">
-                            <Button variant="outline" size="lg" className="border-slate-600 text-white hover:bg-slate-800 hover:scale-105 transition-all">
-                                เข้าสู่ระบบ
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-            </section>
 
             {/* Footer */}
             <footer className="py-8 border-t">
