@@ -47,7 +47,7 @@ export default function PackagesPage() {
 
     const handleRentClick = (product: Product) => {
         if (!user) {
-            router.push("/login?callbackUrl=/master/packages");
+            router.push("/login?callbackUrl=/shop");
             return;
         }
         setSelectedProduct(product);
