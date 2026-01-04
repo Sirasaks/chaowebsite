@@ -17,6 +17,7 @@ interface Product {
     stock?: number;
     account?: string;
     sold?: number;
+    no_agent_discount?: boolean | number;
 }
 
 interface ProductCardProps {
@@ -58,7 +59,11 @@ export function ProductCard({ product, user }: ProductCardProps) {
                     </div>
                     <div className="flex flex-col">
                         <p className="font-medium w-full truncate">{product.name}</p>
-                        <ProductPrice price={product.price} initialUser={user} />
+                        <ProductPrice
+                            price={product.price}
+                            initialUser={user}
+                            allowDiscount={!(product.no_agent_discount === 1 || product.no_agent_discount === true)}
+                        />
                     </div>
                 </Link>
 

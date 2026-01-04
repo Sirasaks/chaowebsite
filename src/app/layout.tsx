@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { getCachedSettings } from "@/lib/settings-cache";
 import { Toaster } from "@/components/ui/sonner";
 import { headers } from "next/headers";
+import NextTopLoader from 'nextjs-toploader';
 
 const noto_sans_thai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
@@ -75,6 +76,17 @@ export default async function RootLayout({
         `}</style>
       </head>
       <body className={noto_sans_thai.className} suppressHydrationWarning={true}>
+        <NextTopLoader
+          color={settings.primary_color || "#2299DD"}
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow={`0 0 10px ${settings.primary_color || "#2299DD"},0 0 5px ${settings.primary_color || "#2299DD"}`}
+        />
         <Providers>
           {children}
           <Toaster position="top-right" />

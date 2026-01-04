@@ -36,7 +36,12 @@ function ProductDescription({ product, user }: { product: Product, user: any }) 
       <CardHeader>
         <CardTitle className="text-3xl font-medium tracking-tight">{product.name}</CardTitle>
         <div className="pt-2">
-          <ProductPrice price={Number(product.price)} textClassName="text-2xl" initialUser={user} />
+          <ProductPrice
+            price={Number(product.price)}
+            textClassName="text-2xl"
+            initialUser={user}
+            allowDiscount={!(product.no_agent_discount === 1 || product.no_agent_discount === true)}
+          />
         </div>
       </CardHeader>
       <CardContent>

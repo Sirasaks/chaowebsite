@@ -23,6 +23,11 @@ import { Loader2, Plus, Pencil, Trash2, List, Save, ArrowUpDown, ArrowUp, ArrowD
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Category } from "@/lib/category-service";
+
+// Extend Category interface locally if needed, but checking usage
+// Since it's imported, I should check the source file or just cast it. 
+// However, the state uses Category[].
+// Let's modify the file where Category is defined.
 import { CategoryTableSkeleton } from "@/components/shop/admin/CategoryTableSkeleton";
 import { ReorderDialog } from "@/components/shop/admin/ReorderDialog";
 import axios from "axios";
@@ -276,7 +281,8 @@ export default function AdminCategoriesPage() {
                     name: category.name,
                     slug: category.slug,
                     image: category.image,
-                    is_active: newStatus
+                    is_active: newStatus,
+                    no_agent_discount: category.no_agent_discount
                 }),
             });
 
@@ -287,6 +293,34 @@ export default function AdminCategoriesPage() {
         } catch (error) {
             console.error(error);
             toast.error("Failed to update category status");
+        }
+    };
+
+    const handleToggleDiscount = async (category: Category) => {
+        try {
+            // Logic: if currently no_agent_discount is true (disabled), new value is false (enabled)
+            // If currently no_agent_discount is false (enabled), new value is true (disabled)
+            const newNoDiscount = !category.no_agent_discount;
+            const res = await fetch("/api/shop/admin/categories", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: category.id,
+                    name: category.name,
+                    slug: category.slug,
+                    image: category.image,
+                    is_active: category.is_active,
+                    no_agent_discount: newNoDiscount
+                }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update discount setting");
+
+            toast.success(newNoDiscount ? "ปิดราคานายหน้าแล้ว" : "เปิดราคานายหน้าแล้ว");
+            await fetchCategories();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to update discount setting");
         }
     };
 
@@ -344,6 +378,7 @@ export default function AdminCategoriesPage() {
                                 <TableHead>รูปภาพ</TableHead>
                                 <TableHead>ชื่อหมวดหมู่</TableHead>
                                 <TableHead>url</TableHead>
+                                <TableHead className="text-center">ราคานายหน้า</TableHead>
                                 <TableHead className="text-center">สถานะ</TableHead>
                                 <TableHead className="text-right">จัดการ</TableHead>
                             </TableRow>
@@ -351,7 +386,7 @@ export default function AdminCategoriesPage() {
                         <TableBody>
                             {categories.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                         ไม่พบหมวดหมู่
                                     </TableCell>
                                 </TableRow>
@@ -369,6 +404,15 @@ export default function AdminCategoriesPage() {
                                         </TableCell>
                                         <TableCell className="font-medium">{category.name}</TableCell>
                                         <TableCell className="text-muted-foreground">{category.slug}</TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center">
+                                                <Switch
+                                                    checked={!category.no_agent_discount}
+                                                    onCheckedChange={() => handleToggleDiscount(category)}
+                                                    className="data-[state=checked]:bg-green-500"
+                                                />
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex justify-center">
                                                 <Switch

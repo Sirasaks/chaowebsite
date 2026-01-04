@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { name, image, slug: providedSlug, is_recommended, display_order, is_active } = body;
+        const { name, image, slug: providedSlug, is_recommended, display_order, is_active, no_agent_discount } = body;
 
         if (!name) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -84,8 +84,8 @@ export async function POST(request: Request) {
         }
 
         await connection.query<ResultSetHeader>(
-            "INSERT INTO categories (shop_id, name, slug, image, is_recommended, display_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [shopId, name, slug, image || "", is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1]
+            "INSERT INTO categories (shop_id, name, slug, image, is_recommended, display_order, is_active, no_agent_discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [shopId, name, slug, image || "", is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, no_agent_discount || false]
         );
 
         return NextResponse.json({ success: true });
@@ -110,7 +110,7 @@ export async function PUT(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { id, name, image, slug, is_recommended, display_order, is_active } = body;
+        const { id, name, image, slug, is_recommended, display_order, is_active, no_agent_discount } = body;
 
         if (!id || !name || !slug) {
             return NextResponse.json({ error: "ID, Name and Slug are required" }, { status: 400 });
@@ -127,8 +127,8 @@ export async function PUT(request: Request) {
         }
 
         const [result] = await connection.query<ResultSetHeader>(
-            "UPDATE categories SET name = ?, image = ?, slug = ?, is_recommended = ?, display_order = ?, is_active = ? WHERE id = ? AND shop_id = ?",
-            [name, image || "", slug, is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, id, shopId]
+            "UPDATE categories SET name = ?, image = ?, slug = ?, is_recommended = ?, display_order = ?, is_active = ?, no_agent_discount = ? WHERE id = ? AND shop_id = ?",
+            [name, image || "", slug, is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, no_agent_discount || false, id, shopId]
         );
 
         if (result.affectedRows === 0) {

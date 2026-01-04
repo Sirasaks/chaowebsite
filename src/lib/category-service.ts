@@ -9,6 +9,7 @@ export interface Category {
     is_active?: boolean | number;
     is_recommended?: boolean;
     display_order?: number;
+    no_agent_discount?: boolean | number;
     created_at: Date;
 }
 

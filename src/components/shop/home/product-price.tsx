@@ -9,6 +9,7 @@ interface ProductPriceProps {
     price: number;
     className?: string;
     textClassName?: string;
+    allowDiscount?: boolean;
 }
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +19,7 @@ interface UserData {
     agent_discount?: number;
 }
 
-export function ProductPrice({ price, className, textClassName, initialUser }: ProductPriceProps & { initialUser?: UserData | null }) {
+export function ProductPrice({ price, className, textClassName, initialUser, allowDiscount = true }: ProductPriceProps & { initialUser?: UserData | null }) {
     const { user: clientUser, loading } = useAuth();
 
     // Check if initialUser was passed (server-side rendering)
@@ -33,8 +34,8 @@ export function ProductPrice({ price, className, textClassName, initialUser }: P
         return <Skeleton className="h-6 w-24" />;
     }
 
-    // Check if user is agent and has discount
-    if (user && user.role === 'agent' && (user.agent_discount || 0) > 0) {
+    // Check if user is agent and has discount, and discount is allowed
+    if (user && user.role === 'agent' && (user.agent_discount || 0) > 0 && allowDiscount) {
         const discountPercent = user.agent_discount || 0;
         const discountedPrice = price * (1 - discountPercent / 100);
 

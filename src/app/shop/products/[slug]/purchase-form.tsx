@@ -209,10 +209,10 @@ export function ProductPurchaseForm({ product, initialUser }: { product: Product
                             {product.type === "account" && ` จำนวน ${quantity} ชิ้น`} ใช่หรือไม่?
                             <br />
                             ราคารวม: <strong>{(
-                                (user?.role === 'agent' && (user.agent_discount || 0) > 0)
+                                (user?.role === 'agent' && (user.agent_discount || 0) > 0 && !(product.no_agent_discount === 1 || product.no_agent_discount === true))
                                     ? (Number(product.price) * (1 - (user.agent_discount || 0) / 100) * quantity).toFixed(2)
                                     : (Number(product.price) * quantity).toFixed(2)
-                            )}</strong> บาท {user?.role === 'agent' && (user.agent_discount || 0) > 0 && <span className="text-xs text-muted-foreground">(รวมส่วนลดแล้ว)</span>}
+                            )}</strong> บาท {user?.role === 'agent' && (user.agent_discount || 0) > 0 && !(product.no_agent_discount === 1 || product.no_agent_discount === true) && <span className="text-xs text-muted-foreground">(รวมส่วนลดแล้ว)</span>}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

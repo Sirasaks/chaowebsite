@@ -52,7 +52,12 @@ export async function getHomepageData(shopId?: number) {
                 [safeShopId]
             ),
             connection.query<RowDataPacket[]>(
-                "SELECT id, name, slug, image, price, description, type, account, (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = products.id AND status = 'completed') as sold FROM products WHERE is_recommended = TRUE AND is_active = 1 AND shop_id = ? ORDER BY display_order ASC, created_at DESC",
+                `SELECT p.id, p.name, p.slug, p.image, p.price, p.description, p.type, p.account, c.no_agent_discount,
+                (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold 
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.is_recommended = TRUE AND p.is_active = 1 AND p.shop_id = ? 
+                ORDER BY p.display_order ASC, p.created_at DESC`,
                 [safeShopId]
             ),
             // 5. Fetch Announcement
@@ -71,7 +76,7 @@ export async function getHomepageData(shopId?: number) {
 
         // Merge real-time stock for API products
         // mergeRealTimeStock removed        
-        const productsWithStock = products.map((p: any) => ({ ...p, stock: 0 }));
+        const productsWithStock = products.map((p: any) => ({ ...p, price: Number(p.price), stock: 0 }));
 
         return {
             slideshow: slideshow as any[],

@@ -94,8 +94,13 @@ export async function POST(request: Request) {
         await connection.beginTransaction();
 
         // 1. Fetch Product (Lock for Update) - Ensure product belongs to this shop
+        // Join with categories to check no_agent_discount setting
         const [products] = await connection.query<RowDataPacket[]>(
-            "SELECT * FROM products WHERE id = ? AND shop_id = ? FOR UPDATE",
+            `SELECT p.*, c.no_agent_discount 
+             FROM products p 
+             LEFT JOIN categories c ON p.category_id = c.id 
+             WHERE p.id = ? AND p.shop_id = ? 
+             FOR UPDATE`,
             [productId, shopId]
         );
 
@@ -130,11 +135,16 @@ export async function POST(request: Request) {
         const userCredit = Number(users[0].credit || 0);
         const userRole = users[0].role;
 
-        // Apply agent discount if user is agent
+        // Apply agent discount if user is agent AND category allows it
         if (userRole === 'agent') {
-            const discountPercent = Number(users[0].agent_discount || 0);
-            if (discountPercent > 0) {
-                actualPrice = actualPrice * (1 - discountPercent / 100);
+            // Check if category disables agent discount
+            const isDiscountDisabled = product.no_agent_discount === 1 || product.no_agent_discount === true;
+
+            if (!isDiscountDisabled) {
+                const discountPercent = Number(users[0].agent_discount || 0);
+                if (discountPercent > 0) {
+                    actualPrice = actualPrice * (1 - discountPercent / 100);
+                }
             }
         }
 
@@ -155,7 +165,7 @@ export async function POST(request: Request) {
         if (userCredit < totalPrice) {
             await connection.rollback();
             return NextResponse.json(
-                { error: "ยอดเงินไม่เพียงพอ (Insufficient Credit)" },
+                { error: "ยอดเงินไม่เพียงพอ" },
                 { status: 400 }
             );
         }

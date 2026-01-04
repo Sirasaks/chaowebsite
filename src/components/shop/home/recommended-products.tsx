@@ -13,6 +13,7 @@ interface Product {
     stock?: number;
     account?: string;
     sold?: number;
+    no_agent_discount?: boolean | number;
 }
 
 interface RecommendedProductsProps {
