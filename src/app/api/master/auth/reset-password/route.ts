@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -25,24 +26,27 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร" }, { status: 400 });
         }
 
-        // 1. Verify Token
+        // Hash the incoming token to compare with stored hash
+        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        // 1. Verify Token (compare with hashed token in database)
         const [resets] = await connection.query<RowDataPacket[]>(
             "SELECT email, created_at FROM master_password_resets WHERE token = ?",
-            [token]
+            [hashedToken]
         );
 
         if (resets.length === 0) {
             return NextResponse.json({ error: "ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง หรือหมดอายุ" }, { status: 400 });
         }
 
-        // Check if token is expired (24 hours)
+        // Check if token is expired (1 hour instead of 24)
         const createdAt = new Date(resets[0].created_at);
         const now = new Date();
         const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
-        if (hoursDiff > 24) {
+        if (hoursDiff > 1) {
             // Delete expired token
-            await connection.query("DELETE FROM master_password_resets WHERE token = ?", [token]);
+            await connection.query("DELETE FROM master_password_resets WHERE token = ?", [hashedToken]);
             return NextResponse.json({ error: "ลิงก์รีเซ็ตรหัสผ่านหมดอายุแล้ว กรุณาขอลิงก์ใหม่" }, { status: 400 });
         }
 
@@ -55,10 +59,10 @@ export async function POST(request: Request) {
             [hashedPassword, email]
         );
 
-        // 3. Delete Token
+        // 3. Delete Token (use hashed token)
         await connection.query(
             "DELETE FROM master_password_resets WHERE token = ?",
-            [token]
+            [hashedToken]
         );
 
         return NextResponse.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });

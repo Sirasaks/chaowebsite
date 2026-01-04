@@ -6,11 +6,20 @@ import bcrypt from "bcrypt";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Rate limiting: 5 attempts per minute per IP
+    const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+    const { success } = rateLimit(`shop-change-pwd:${shopId}:${ip}`, { limit: 5, windowMs: 60000 });
+
+    if (!success) {
+        return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
     }
 
     const connection = await pool.getConnection();

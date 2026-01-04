@@ -24,7 +24,12 @@ interface NavbarProps {
 export function MasterNavbar({ logo, title }: NavbarProps) {
     const { user, setUser, loading, error } = useAuth()
     const pathname = usePathname()
+    const [mounted, setMounted] = useState(false)
     // const [contactLink, setContactLink] = useState<string | null>(null)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Fetch contact link from settings (Master might not have settings yet)
     // useEffect(() => {
@@ -59,6 +64,18 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
         } catch (err) {
             console.error(err)
         }
+    }
+
+    // Helper function to render auth content only after mount
+    const renderAuthContent = () => {
+        if (!mounted || loading) {
+            return (
+                <div className="h-10 w-10 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+            )
+        }
+        return null
     }
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white p-2 text-foreground">
@@ -119,7 +136,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
 
                         {/* Desktop Auth Buttons / Avatar */}
                         <div className="hidden md:flex items-center gap-4">
-                            {loading ? (
+                            {(!mounted || loading) ? (
                                 <div className="h-10 w-10 flex items-center justify-center">
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 </div>
@@ -150,7 +167,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <DropdownMenuSeparator />
 
                                         <DropdownMenuItem asChild>
-                                            <Link href="/master"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
+                                            <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem asChild>
@@ -191,7 +208,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
 
                         {/* Mobile Avatar */}
                         <div className="md:hidden">
-                            {loading ? (
+                            {(!mounted || loading) ? (
                                 <Loader2 className="h-6 w-6 animate-spin" />
                             ) : user ? (
                                 <DropdownMenu>
@@ -220,7 +237,7 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                         <DropdownMenuSeparator />
 
                                         <DropdownMenuItem asChild>
-                                            <Link href="/master"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
+                                            <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem asChild>

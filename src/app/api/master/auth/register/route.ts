@@ -15,22 +15,29 @@ const registerSchema = z.object({
     captchaToken: z.string().optional(),
 });
 
-async function verifyRecaptcha(token: string | undefined) {
+async function verifyTurnstile(token: string | undefined) {
     if (!token) return false;
 
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const secretKey = process.env.TURNSTILE_SECRET_KEY;
     if (!secretKey) {
-        console.warn("RECAPTCHA_SECRET_KEY is not set, skipping verification");
+        console.warn("TURNSTILE_SECRET_KEY is not set, skipping verification");
         return true; // Allow if config is missing (dev mode fallback)
     }
 
     try {
         const response = await axios.post(
-            `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            new URLSearchParams({
+                secret: secretKey,
+                response: token,
+            }),
+            {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }
         );
         return response.data.success;
     } catch (error) {
-        console.error("Recaptcha verification failed:", error);
+        console.error("Turnstile verification failed:", error);
         return false;
     }
 }
@@ -48,10 +55,10 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { username, email, password, captchaToken } = registerSchema.parse(body);
 
-        // Verify Captcha
-        const isCaptchaValid = await verifyRecaptcha(captchaToken);
+        // Verify Turnstile
+        const isCaptchaValid = await verifyTurnstile(captchaToken);
         if (!isCaptchaValid) {
-            return NextResponse.json({ error: "การยืนยันตัวตนล้มเหลว (reCAPTCHA Failed)" }, { status: 400 });
+            return NextResponse.json({ error: "การยืนยันตัวตนล้มเหลว (Turnstile Failed)" }, { status: 400 });
         }
 
         // 1. Check if Master User exists

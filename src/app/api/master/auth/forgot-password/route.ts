@@ -33,8 +33,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว" });
         }
 
-        // 2. Generate Token
-        const token = crypto.randomBytes(32).toString("hex");
+        // 2. Generate Token (plain token for email, hashed for storage)
+        const plainToken = crypto.randomBytes(32).toString("hex");
+        const hashedToken = crypto.createHash("sha256").update(plainToken).digest("hex");
 
         // 3. Self-healing: Ensure master_password_resets table exists
         try {
@@ -58,16 +59,16 @@ export async function POST(request: Request) {
             [email]
         );
 
-        // 5. Save new token
+        // 5. Save HASHED token (not plain token)
         await connection.query(
             "INSERT INTO master_password_resets (email, token) VALUES (?, ?)",
-            [email, token]
+            [email, hashedToken]
         );
 
-        // 6. Send Email
+        // 6. Send Email with PLAIN token (user will send this back)
         const host = request.headers.get("host");
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-        const resetLink = `${protocol}://${host}/reset-password?token=${token}`;
+        const resetLink = `${protocol}://${host}/reset-password?token=${plainToken}`;
 
         try {
             await sendMail({
@@ -77,13 +78,13 @@ export async function POST(request: Request) {
                     <h1>รีเซ็ตรหัสผ่าน</h1>
                     <p>คุณได้ทำการร้องขอให้รีเซ็ตรหัสผ่าน กรุณาคลิกลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่:</p>
                     <a href="${resetLink}">${resetLink}</a>
+                    <p>ลิงก์นี้จะหมดอายุใน 1 ชั่วโมง</p>
                     <p>หากคุณไม่ได้เป็นผู้ร้องขอ กรุณาเพิกเฉยต่ออีเมลฉบับนี้</p>
                 `,
             });
         } catch (mailError) {
             console.error("Failed to send email:", mailError);
-            // Log link as fallback if email fails
-            console.log("Fallback Reset Link:", resetLink);
+            // Don't log the token for security reasons
         }
 
         return NextResponse.json({

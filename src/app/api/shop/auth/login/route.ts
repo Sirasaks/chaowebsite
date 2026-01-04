@@ -15,7 +15,7 @@ const loginSchema = z.object({
 export async function POST(req: Request) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
-    const { success } = rateLimit(ip, { limit: 10, windowMs: 60000 });
+    const { success } = rateLimit(ip, { limit: 5, windowMs: 60000 });
 
     if (!success) {
       return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอสักครู่" }, { status: 429 });

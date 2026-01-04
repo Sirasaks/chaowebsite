@@ -4,8 +4,17 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+    // Rate limiting: 10 topup attempts per minute per IP
+    const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+    const { success: rateLimitSuccess } = rateLimit(`master-topup:${ip}`, { limit: 10, windowMs: 60000 });
+
+    if (!rateLimitSuccess) {
+        return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 1. Authenticate User
@@ -139,7 +148,7 @@ export async function POST(request: Request) {
         await connection.rollback();
         console.error("Topup Error:", error);
         return NextResponse.json(
-            { error: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์: " + error.message },
+            { error: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" },
             { status: 500 }
         );
     } finally {

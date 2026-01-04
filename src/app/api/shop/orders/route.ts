@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { rateLimit } from "@/lib/rate-limit";
 
 // In-memory cache for request deduplication
 const processedRequests = new Map<string, number>();
@@ -25,6 +26,14 @@ export async function POST(request: Request) {
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Rate limiting: 30 orders per minute per IP per shop
+    const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+    const { success: rateLimitSuccess } = rateLimit(`shop-order:${shopId}:${ip}`, { limit: 30, windowMs: 60000 });
+
+    if (!rateLimitSuccess) {
+        return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอสักครู่" }, { status: 429 });
     }
 
     const connection = await pool.getConnection();

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useAuth } from "@/context/AuthContext"
-import ReCAPTCHA from "react-google-recaptcha"
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile"
 
 export default function SignupForm() {
     const [email, setEmail] = useState("")
@@ -26,7 +26,7 @@ export default function SignupForm() {
     const [isSuccess, setIsSuccess] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-    const recaptchaRef = useRef<ReCAPTCHA>(null)
+    const turnstileRef = useRef<TurnstileInstance>(null)
     const { user, setUser } = useAuth()
 
     const router = useRouter()
@@ -69,7 +69,7 @@ export default function SignupForm() {
         } catch (err: any) {
             toast.error(err.message)
             setIsSuccess(false)
-            recaptchaRef.current?.reset()
+            turnstileRef.current?.reset()
             setCaptchaToken(null)
         } finally {
             setIsSubmitting(false)
@@ -139,11 +139,13 @@ export default function SignupForm() {
                         </div>
 
                         <div className="pt-4 flex justify-center">
-                            <ReCAPTCHA
-                                ref={recaptchaRef}
-                                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
-                                onChange={(token) => setCaptchaToken(token)}
-                                theme="light"
+                            <Turnstile
+                                ref={turnstileRef}
+                                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                                onSuccess={(token) => setCaptchaToken(token)}
+                                onError={() => setCaptchaToken(null)}
+                                onExpire={() => setCaptchaToken(null)}
+                                options={{ theme: 'light' }}
                             />
                         </div>
 

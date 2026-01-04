@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Reserved subdomains that cannot be used
 const RESERVED_SUBDOMAINS = [
@@ -41,6 +42,14 @@ function validateSubdomain(subdomain: string): { valid: boolean; error?: string 
 }
 
 export async function POST(request: Request) {
+    // Rate limiting: 10 rent operations per minute per IP
+    const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+    const { success: rateLimitSuccess } = rateLimit(`master-rent:${ip}`, { limit: 10, windowMs: 60000 });
+
+    if (!rateLimitSuccess) {
+        return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
+    }
+
     const connection = await pool.getConnection();
     try {
         // 1. Authenticate Master User
@@ -238,9 +247,9 @@ export async function POST(request: Request) {
         // Create Master Order Record
         // Assuming product_id 1 is standard package for now, or we can pass it
         // Create Master Order Record
-        // Save initial credentials in data field for history reference
+        // Save order info (DO NOT STORE PASSWORD - security risk)
         const orderData = operationType === 'new'
-            ? JSON.stringify({ username, password })
+            ? JSON.stringify({ username, hasCredentials: true, createdAt: new Date() })
             : JSON.stringify({ operation: 'renew', renewed_at: new Date() });
 
         await connection.query(
@@ -259,7 +268,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         await connection.rollback();
         console.error("Rent Error:", error);
-        return NextResponse.json({ error: "Internal Server Error: " + error.message }, { status: 500 });
+        return NextResponse.json({ error: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" }, { status: 500 });
     } finally {
         connection.release();
     }

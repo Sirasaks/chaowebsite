@@ -39,8 +39,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว" });
         }
 
-        // 2. Generate Token
-        const token = crypto.randomBytes(32).toString("hex");
+        // 2. Generate Token (plain for email, hashed for storage)
+        const plainToken = crypto.randomBytes(32).toString("hex");
+        const hashedToken = crypto.createHash("sha256").update(plainToken).digest("hex");
 
         // 3. Save to DB (password_resets table might need shop_id too? Or just email/token is enough?)
         // The password_resets table structure is: email, token, created_at.
@@ -68,9 +69,16 @@ export async function POST(request: Request) {
             // Ignore error
         }
 
+        // Delete any existing tokens for this email and shop
+        await connection.query(
+            "DELETE FROM password_resets WHERE email = ? AND shop_id = ?",
+            [email, shopId]
+        );
+
+        // Save HASHED token (not plain)
         await connection.query(
             "INSERT INTO password_resets (email, token, shop_id) VALUES (?, ?, ?)",
-            [email, token, shopId]
+            [email, hashedToken, shopId]
         );
 
         // 4. Send Email
@@ -78,7 +86,7 @@ export async function POST(request: Request) {
         // The `request.headers.get("host")` should give us the shop domain.
         const host = request.headers.get("host");
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-        const resetLink = `${protocol}://${host}/reset-password?token=${token}`;
+        const resetLink = `${protocol}://${host}/reset-password?token=${plainToken}`;
 
         try {
             await sendMail({
@@ -88,13 +96,13 @@ export async function POST(request: Request) {
                     <h1>รีเซ็ตรหัสผ่าน</h1>
                     <p>คุณได้ทำการร้องขอให้รีเซ็ตรหัสผ่าน กรุณาคลิกลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่:</p>
                     <a href="${resetLink}">${resetLink}</a>
+                    <p>ลิงก์นี้จะหมดอายุใน 1 ชั่วโมง</p>
                     <p>หากคุณไม่ได้เป็นผู้ร้องขอ กรุณาเพิกเฉยต่ออีเมลฉบับนี้</p>
                 `,
             });
         } catch (mailError) {
             console.error("Failed to send email:", mailError);
-            // Log link as fallback if email fails (e.g. missing config)
-            console.log("Fallback Reset Link:", resetLink);
+            // Don't log the token for security reasons
         }
 
         return NextResponse.json({
