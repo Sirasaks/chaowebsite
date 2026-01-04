@@ -19,6 +19,7 @@ interface UserProfile {
         role: string;
         credit: string;
         created_at: string;
+        agent_discount?: number;
     };
     stats: {
         totalOrders: number;
@@ -112,10 +113,21 @@ export default function ProfilePage() {
                         <Calendar className="h-4 w-4" />
                         <span>สมัครเมื่อ {format(new Date(user.created_at), "d MMM yyyy", { locale: th })}</span>
                     </div>
-                    <div className="pt-2">
-                        <Badge variant={user.role === 'admin' || user.role === 'owner' ? 'destructive' : 'secondary'}>
-                            {user.role.toUpperCase()}
-                        </Badge>
+                    <div className="pt-2 flex flex-col items-start gap-2">
+                        {user.role === 'owner' ? (
+                            <Badge variant="default">เจ้าของร้าน</Badge>
+                        ) : user.role === 'agent' ? (
+                            <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-purple-100 text-purple-800">นายหน้า</Badge>
+                                {(user as any).agent_discount > 0 && (
+                                    <Badge variant="outline" className="text-xs border-purple-200 text-purple-600">
+                                        ส่วนลด {(user as any).agent_discount}%
+                                    </Badge>
+                                )}
+                            </div>
+                        ) : (
+                            <Badge variant="secondary">ผู้ใช้ทั่วไป</Badge>
+                        )}
                     </div>
                 </div>
                 <div className="ml-auto flex gap-2">

@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         try {
             // 2. Fetch User Info (Verify user belongs to shop)
             const [users] = await connection.query<RowDataPacket[]>(
-                "SELECT id, username, email, role, credit, created_at FROM users WHERE id = ? AND shop_id = ?",
+                "SELECT id, username, email, role, credit, created_at, IFNULL(agent_discount, 0) as agent_discount FROM users WHERE id = ? AND shop_id = ?",
                 [userId, shopId]
             );
 

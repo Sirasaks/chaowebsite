@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getProductBySlug, Product } from "@/lib/product-service";
 import { ProductPurchaseForm } from "./purchase-form"; // Separate client component for interactivity
+import { getServerUser } from "@/lib/auth-service";
 import { getShopIdFromContext } from "@/lib/shop-helper";
+import { ProductPrice } from "@/components/shop/home/product-price";
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +30,14 @@ interface PageProps {
 }
 
 // -------------------- Product Description --------------------
-function ProductDescription({ product }: { product: Product }) {
+function ProductDescription({ product, user }: { product: Product, user: any }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-3xl font-medium tracking-tight">{product.name}</CardTitle>
-        <CardDescription className="text-2xl font-medium text-gradient-primary pt-2">{product.price} บาท</CardDescription>
+        <div className="pt-2">
+          <ProductPrice price={Number(product.price)} textClassName="text-2xl" initialUser={user} />
+        </div>
       </CardHeader>
       <CardContent>
         <div
@@ -57,6 +61,7 @@ export default async function ProductsPage({ params }: PageProps) {
     notFound();
   }
 
+  const user = await getServerUser();
   let product = await getProductBySlug(slug, shopId);
 
   if (product) {
@@ -99,8 +104,8 @@ export default async function ProductsPage({ params }: PageProps) {
 
         {/* Right: Description + Purchase */}
         <div className="flex flex-col gap-8">
-          <ProductDescription product={product} />
-          <ProductPurchaseForm product={product} />
+          <ProductDescription product={product} user={user} />
+          <ProductPurchaseForm product={product} initialUser={user} />
         </div>
       </div>
     </div>

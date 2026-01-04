@@ -30,6 +30,7 @@ interface Order {
     id: number;
     user_id: number;
     username: string;
+    product_id: number;
     product_name: string;
     price: string;
     quantity: number;
@@ -122,6 +123,7 @@ export default function AdminOrderHistoryPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[80px]">#</TableHead>
                                 <TableHead className="w-[160px]">วันที่/เวลา</TableHead>
                                 <TableHead>ผู้ใช้</TableHead>
                                 <TableHead>สินค้า</TableHead>
@@ -139,6 +141,9 @@ export default function AdminOrderHistoryPage() {
                             ) : (
                                 orders.map((order) => (
                                     <TableRow key={order.id}>
+                                        <TableCell className="font-medium align-top">
+                                            #{order.id}
+                                        </TableCell>
                                         <TableCell className="whitespace-nowrap align-top text-sm">
                                             {format(new Date(order.created_at), "d MMM yyyy HH:mm", { locale: th })}
                                         </TableCell>

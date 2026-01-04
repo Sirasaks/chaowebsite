@@ -112,28 +112,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "สินค้านี้ไม่พร้อมขาย" }, { status: 400 });
         }
 
-        // For API products with auto-pricing, fetch real-time price
-        // Logic removed as API integration is deleted
+        // Get base price
         let actualPrice = Number(product.price);
 
-
-        // Check for Price Mismatch if expectedPrice is provided
-        if (expectedPrice !== undefined) {
-            const tolerance = 0.01; // Allow small floating point differences
-            if (Math.abs(actualPrice - expectedPrice) > tolerance) {
-                await connection.rollback();
-                return NextResponse.json(
-                    { error: `ราคาสินค้ามีการเปลี่ยนแปลง (ราคาเดิม: ${expectedPrice}, ราคาใหม่: ${actualPrice}) กรุณารีเฟรชหน้าจอ` },
-                    { status: 400 }
-                );
-            }
-        }
-
-        const totalPrice = actualPrice * quantity;
-
-        // 2. Check User Credit (Lock for Update) - Ensure user belongs to this shop
+        // 2. Check User Credit and Role (Lock for Update) - Ensure user belongs to this shop
+        // Also fetch agent_discount
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT credit FROM users WHERE id = ? AND shop_id = ? FOR UPDATE",
+            "SELECT credit, role, IFNULL(agent_discount, 0) as agent_discount FROM users WHERE id = ? AND shop_id = ? FOR UPDATE",
             [userId, shopId]
         );
 
@@ -143,6 +128,29 @@ export async function POST(request: Request) {
         }
 
         const userCredit = Number(users[0].credit || 0);
+        const userRole = users[0].role;
+
+        // Apply agent discount if user is agent
+        if (userRole === 'agent') {
+            const discountPercent = Number(users[0].agent_discount || 0);
+            if (discountPercent > 0) {
+                actualPrice = actualPrice * (1 - discountPercent / 100);
+            }
+        }
+
+        // Check for Price Mismatch if expectedPrice is provided (skip for agents as price changes)
+        if (expectedPrice !== undefined && userRole !== 'agent') {
+            const tolerance = 0.01; // Allow small floating point differences
+            if (Math.abs(Number(product.price) - expectedPrice) > tolerance) {
+                await connection.rollback();
+                return NextResponse.json(
+                    { error: `ราคาสินค้ามีการเปลี่ยนแปลง (ราคาเดิม: ${expectedPrice}, ราคาใหม่: ${product.price}) กรุณารีเฟรชหน้าจอ` },
+                    { status: 400 }
+                );
+            }
+        }
+
+        const totalPrice = actualPrice * quantity;
 
         if (userCredit < totalPrice) {
             await connection.rollback();

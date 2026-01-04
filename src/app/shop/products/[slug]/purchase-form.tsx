@@ -25,10 +25,15 @@ import { Loader2, LogIn } from "lucide-react";
 import { Product } from "@/lib/product-service";
 import { useAuth } from "@/context/AuthContext";
 
-export function ProductPurchaseForm({ product }: { product: Product }) {
+export function ProductPurchaseForm({ product, initialUser }: { product: Product, initialUser?: any }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, setUser } = useAuth();
+    const { user: clientUser, setUser } = useAuth();
+
+    // Use initialUser for SSR, then switch to clientUser when hydration/auth completes
+    // Note: clientUser is null initially, so we prioritize initialUser if defined
+    const user = initialUser !== undefined ? initialUser : clientUser;
+
     const [quantity, setQuantity] = useState(1);
     const [formData, setFormData] = useState({ username: "", password: "" });
     const [submitting, setSubmitting] = useState(false);
@@ -203,7 +208,11 @@ export function ProductPurchaseForm({ product }: { product: Product }) {
                             คุณต้องการสั่งซื้อ <strong>{product.name}</strong>
                             {product.type === "account" && ` จำนวน ${quantity} ชิ้น`} ใช่หรือไม่?
                             <br />
-                            ราคารวม: <strong>{(Number(product.price) * quantity).toFixed(2)}</strong> บาท
+                            ราคารวม: <strong>{(
+                                (user?.role === 'agent' && (user.agent_discount || 0) > 0)
+                                    ? (Number(product.price) * (1 - (user.agent_discount || 0) / 100) * quantity).toFixed(2)
+                                    : (Number(product.price) * quantity).toFixed(2)
+                            )}</strong> บาท {user?.role === 'agent' && (user.agent_discount || 0) > 0 && <span className="text-xs text-muted-foreground">(รวมส่วนลดแล้ว)</span>}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

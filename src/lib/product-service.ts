@@ -10,7 +10,7 @@ export interface Product {
     account: string;
     created_at: Date;
     slug: string;
-    type: 'account' | 'form';
+    type: 'account' | 'form' | 'api';
     // category_id removed as we use Many-to-Many
     stock?: number; // Stock is now optional/virtual
     is_active?: boolean | number; // Database returns 0/1 as number, but can be boolean

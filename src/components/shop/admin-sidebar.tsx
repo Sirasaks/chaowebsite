@@ -21,7 +21,8 @@ import {
     LogOut,
     MoreVertical,
     Clock,
-    Star
+    Star,
+    Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -170,6 +171,15 @@ export function AdminSidebar() {
                             isActive={pathname === "/admin/orders/history"}
                         />
                     </SidebarCollapse>
+                </SidebarGroup>
+
+                <SidebarGroup title="สมาชิก">
+                    <SidebarItem
+                        icon={Users}
+                        label="จัดการสมาชิก"
+                        href="/admin/member"
+                        isActive={pathname.startsWith("/admin/member")}
+                    />
                 </SidebarGroup>
 
                 <SidebarGroup title="สินค้าอื่นๆ">

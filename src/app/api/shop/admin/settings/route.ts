@@ -71,11 +71,29 @@ export async function PUT(req: Request) {
                 );
             }
         } else {
-            // Insert with provided values (others will be NULL/default)
+            // Fetch shop name for default title
+            const [shops] = await connection.query<RowDataPacket[]>(
+                "SELECT name FROM shops WHERE id = ?",
+                [shopId]
+            );
+            const defaultTitle = shops[0]?.name || "My Shop";
+
+            // Insert with provided values or defaults
             await connection.query(
                 `INSERT INTO site_settings (shop_id, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [shopId, site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text]
+                [
+                    shopId,
+                    site_title || defaultTitle,
+                    site_description || "",
+                    site_icon || "",
+                    site_logo || "",
+                    site_background || "",
+                    primary_color || "#09090b", // Default primary (zinc-950)
+                    secondary_color || "#ffffff", // Default secondary (white)
+                    contact_link || null,
+                    announcement_text || null
+                ]
             );
         }
 

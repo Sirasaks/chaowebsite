@@ -7,6 +7,7 @@ interface User {
   username: string
   credit: number
   role?: string
+  agent_discount?: number
 }
 
 interface AuthContextType {
@@ -37,7 +38,12 @@ function BaseAuthProvider({ children, endpoint }: AuthProviderProps) {
         if (res.ok) {
           const data = await res.json()
           if (data.user) {
-            setUser({ username: data.user.username, credit: Number(data.user.credit || 0), role: data.user.role })
+            setUser({
+              username: data.user.username,
+              credit: Number(data.user.credit || 0),
+              role: data.user.role,
+              agent_discount: Number(data.user.agent_discount || 0)
+            })
           }
         } else {
           setUser(null)

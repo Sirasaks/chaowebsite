@@ -45,9 +45,10 @@ export async function GET(request: Request) {
                 SELECT 
                     o.id,
                     o.user_id,
+                    o.product_id,
                     u.username,
                     p.name as product_name,
-                    p.price,
+                    o.price,
                     o.quantity,
                     o.data,
                     o.status,

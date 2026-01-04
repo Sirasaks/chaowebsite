@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     // Verify user belongs to this shop
     const [rows] = await pool.query(
-      "SELECT id, username, role, credit FROM users WHERE id = ? AND shop_id = ?",
+      "SELECT id, username, role, credit, IFNULL(agent_discount, 0) as agent_discount FROM users WHERE id = ? AND shop_id = ?",
       [decoded.userId, shopId]
     );
 

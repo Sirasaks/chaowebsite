@@ -8,12 +8,14 @@ import { MarqueeSection } from "@/components/shop/home/marquee-section";
 import { getHomepageData } from "@/lib/home-service";
 
 import { getShopIdFromContext } from "@/lib/shop-helper";
+import { getServerUser } from "@/lib/auth-service";
 
 export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 
 export default async function page() {
   const shopId = await getShopIdFromContext();
   const { slideshow, stats, quickLinks, categories, products, announcement } = await getHomepageData(shopId || 0);
+  const user = await getServerUser();
 
   return (
     <div className="min-h-screen pb-10">
@@ -22,7 +24,7 @@ export default async function page() {
       <StatsSection stats={stats} />
       <QuickLinks links={quickLinks} />
       <RecommendedCategories categories={categories} />
-      <RecommendedProducts products={products as any[]} />
+      <RecommendedProducts products={products as any[]} user={user} />
     </div>
   );
 }

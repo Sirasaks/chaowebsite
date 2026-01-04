@@ -17,9 +17,10 @@ interface Product {
 
 interface RecommendedProductsProps {
     products: Product[];
+    user?: any;
 }
 
-export function RecommendedProducts({ products }: RecommendedProductsProps) {
+export function RecommendedProducts({ products, user }: RecommendedProductsProps) {
     if (products.length === 0) return null;
 
     return (
@@ -33,7 +34,7 @@ export function RecommendedProducts({ products }: RecommendedProductsProps) {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                        <ProductCard key={product.id} product={product} user={user} />
                     ))}
                 </div>
             </div>

@@ -11,6 +11,7 @@ import { getShopIdFromContext } from "@/lib/shop-helper";
 import { getCategoryBySlug } from "@/lib/category-service";
 import { getProductsByCategoryId } from "@/lib/product-service";
 import { notFound } from "next/navigation";
+import { getServerUser } from "@/lib/auth-service";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ export default async function CategoryPage({ params }: PageProps) {
   let products = await getProductsByCategoryId(category.id, shopId || 0);
   // mergeRealTimeStock removed
   // products = await mergeRealTimeStock(products);
+
+  const user = await getServerUser();
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -66,7 +69,7 @@ export default async function CategoryPage({ params }: PageProps) {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product as any} />
+            <ProductCard key={product.id} product={product as any} user={user} />
           ))}
         </div>
       )}

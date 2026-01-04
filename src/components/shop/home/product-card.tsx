@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ProductPrice } from "./product-price";
 
 interface Product {
     id: number;
@@ -20,9 +21,10 @@ interface Product {
 
 interface ProductCardProps {
     product: Product;
+    user?: any;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, user }: ProductCardProps) {
     const [isImageLoading, setIsImageLoading] = useState(true);
     const imgRef = useRef<HTMLImageElement>(null);
 
@@ -54,8 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
                             className="w-full h-full aspect-square rounded-lg object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                     </div>
-                    <p className="font-medium w-full truncate">{product.name}</p>
-                    <p className="font-medium text-gradient-primary">{product.price} บาท</p>
+                    <div className="flex flex-col">
+                        <p className="font-medium w-full truncate">{product.name}</p>
+                        <ProductPrice price={product.price} initialUser={user} />
+                    </div>
                 </Link>
 
                 <Button asChild className="mt-2 w-full" size="sm">
