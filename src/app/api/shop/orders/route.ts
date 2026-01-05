@@ -165,7 +165,7 @@ export async function POST(request: Request) {
         if (userCredit < totalPrice) {
             await connection.rollback();
             return NextResponse.json(
-                { error: "ยอดเงินไม่เพียงพอ" },
+                { error: "เครดิตไม่เพียงพอ" },
                 { status: 400 }
             );
         }
