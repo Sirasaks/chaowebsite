@@ -94,7 +94,7 @@ export default function AdminAccountsPage() {
             setEditingProduct(product);
             setFormData({
                 name: product.name,
-                price: product.price,
+                price: String(product.price),
                 image: product.image,
                 description: product.description,
                 account: product.account || "",

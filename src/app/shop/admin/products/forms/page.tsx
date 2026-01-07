@@ -93,7 +93,7 @@ export default function AdminFormsPage() {
             setEditingProduct(product);
             setFormData({
                 name: product.name,
-                price: product.price,
+                price: String(product.price),
                 image: product.image,
                 description: product.description,
                 category_id: product.category_id ? String(product.category_id) : "",
