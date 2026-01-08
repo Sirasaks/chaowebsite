@@ -11,7 +11,7 @@ export const MarqueeSection = ({ text }: MarqueeSectionProps) => {
     return (
         <section className="py-2">
             <div className="max-w-7xl mx-auto px-4">
-                <div className="bg-white/80 backdrop-blur-md border rounded-lg shadow-sm p-1.5 flex items-center overflow-hidden">
+                <div className="bg-white backdrop-blur-md border rounded-lg shadow-sm p-1.5 flex items-center overflow-hidden">
                     <div className="bg-gradient-primary text-white px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap z-10 shrink-0 flex items-center gap-2 shadow-sm">
                         <Megaphone className="w-4 h-4 animate-pulse" />
                         อัพเดตข่าวสาร

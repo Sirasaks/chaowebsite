@@ -153,7 +153,7 @@ export default function QuickLinksSettings() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {links.map((link) => (
-                        <Card key={link.id} className="group overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white/50 backdrop-blur-sm">
+                        <Card key={link.id} className="group overflow-hidden border transition-all duration-300 bg-white/50 backdrop-blur-sm">
                             <div className="aspect-2/1 relative overflow-hidden bg-slate-100">
                                 {link.image_url ? (
                                     <img
@@ -169,7 +169,7 @@ export default function QuickLinksSettings() {
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow-sm">
+                                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow">
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>

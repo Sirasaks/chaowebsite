@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
         // Fetch settings
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_code', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_code', 'bank_account_number', 'bank_account_name', 'truemoney_phone', 'bank_transfer_enabled', 'truemoney_angpao_enabled', 'truemoney_fee_enabled')",
             [shopId]
         );
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { bank_code, bank_account_number, bank_account_name, truemoney_phone, bank_transfer_enabled, truemoney_angpao_enabled } = body;
+        const { bank_code, bank_account_number, bank_account_name, truemoney_phone, bank_transfer_enabled, truemoney_angpao_enabled, truemoney_fee_enabled } = body;
 
         await connection.beginTransaction();
 
@@ -83,6 +83,7 @@ export async function POST(request: Request) {
             { key: "truemoney_phone", value: truemoney_phone },
             { key: "bank_transfer_enabled", value: bank_transfer_enabled },
             { key: "truemoney_angpao_enabled", value: truemoney_angpao_enabled },
+            { key: "truemoney_fee_enabled", value: truemoney_fee_enabled },
         ];
 
         for (const setting of settingsToUpdate) {

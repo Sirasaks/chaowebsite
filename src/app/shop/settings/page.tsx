@@ -69,7 +69,7 @@ export default function SettingsPage() {
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-md">
-            <Card className="border-none shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border shadow-lg bg-white backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
                         <Lock className="h-6 w-6 text-primary" />

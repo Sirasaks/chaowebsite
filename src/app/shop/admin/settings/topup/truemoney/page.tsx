@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Gift, Phone } from "lucide-react";
+import { Loader2, Gift, Phone, Percent } from "lucide-react";
 
 export default function TruemoneySettingsPage() {
     const [loading, setLoading] = useState(true);
@@ -15,6 +15,7 @@ export default function TruemoneySettingsPage() {
     const [settings, setSettings] = useState({
         truemoney_phone: "",
         truemoney_angpao_enabled: false,
+        truemoney_fee_enabled: false,
     });
 
     useEffect(() => {
@@ -29,6 +30,7 @@ export default function TruemoneySettingsPage() {
                 setSettings({
                     truemoney_phone: data.truemoney_phone || "",
                     truemoney_angpao_enabled: data.truemoney_angpao_enabled === "true",
+                    truemoney_fee_enabled: data.truemoney_fee_enabled === "true",
                 });
             }
         } catch (error) {
@@ -49,6 +51,7 @@ export default function TruemoneySettingsPage() {
                 body: JSON.stringify({
                     truemoney_phone: settings.truemoney_phone,
                     truemoney_angpao_enabled: settings.truemoney_angpao_enabled,
+                    truemoney_fee_enabled: settings.truemoney_fee_enabled,
                 }),
             });
 
@@ -64,13 +67,7 @@ export default function TruemoneySettingsPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+
 
     return (
         <div className="space-y-6">
@@ -101,6 +98,24 @@ export default function TruemoneySettingsPage() {
                                 checked={settings.truemoney_angpao_enabled}
                                 onCheckedChange={(checked) =>
                                     setSettings({ ...settings, truemoney_angpao_enabled: checked })
+                                }
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="flex items-center gap-2">
+                                    <Percent className="h-4 w-4" />
+                                    หักค่าธรรมเนียม 2.9%
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    หักค่าธรรมเนียม Truemoney 2.9% จากยอดเติมเงินของลูกค้า
+                                </p>
+                            </div>
+                            <Switch
+                                checked={settings.truemoney_fee_enabled}
+                                onCheckedChange={(checked) =>
+                                    setSettings({ ...settings, truemoney_fee_enabled: checked })
                                 }
                             />
                         </div>

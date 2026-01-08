@@ -47,7 +47,7 @@ export function ProductCard({ product, user }: ProductCardProps) {
 
     return (
         <div>
-            <div className="rounded-lg p-2.5 md:p-3 group hover:-translate-y-1 transition-all flex flex-col shadow-sm hover:shadow-md bg-card/50 backdrop-blur-sm border hover:border-primary">
+            <div className="rounded-lg p-2.5 md:p-3 group hover:-translate-y-1 transition-all flex flex-col shadow-sm hover:shadow-lg bg-white backdrop-blur-sm border hover:border-primary">
                 <Link href={`/products/${product.slug}`} className="grow">
                     <div className="w-full aspect-square mb-2 overflow-hidden rounded-lg relative bg-slate-100">
                         {/* Skeleton Loader */}

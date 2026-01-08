@@ -9,6 +9,7 @@ export default function TopupPage() {
     const [settings, setSettings] = useState({
         bank_transfer_enabled: "true",
         truemoney_angpao_enabled: "true",
+        truemoney_fee_enabled: "false",
     });
     const [loading, setLoading] = useState(true);
 
@@ -21,6 +22,7 @@ export default function TopupPage() {
                     setSettings({
                         bank_transfer_enabled: data.bank_transfer_enabled ?? "true",
                         truemoney_angpao_enabled: data.truemoney_angpao_enabled ?? "true",
+                        truemoney_fee_enabled: data.truemoney_fee_enabled ?? "false",
                     });
                 }
             } catch (error) {
@@ -45,7 +47,7 @@ export default function TopupPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 {settings.truemoney_angpao_enabled === "true" && (
                     <Link href="/topup/angpao" className="group">
-                        <Card className="h-full hover:shadow-xl transition-all duration-300 border hover:border-primary cursor-pointer bg-gradient-to-br from-red-50 to-white">
+                        <Card className="h-full hover:shadow-xl transition-all duration-300 border hover:border-primary cursor-pointer bg-gradient-to-br from-slate-50 to-white">
                             <CardHeader className="text-center pb-2">
                                 <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                                     <Gift className="w-10 h-10 text-red-600" />
@@ -55,8 +57,11 @@ export default function TopupPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="text-center">
-                                <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium mb-2">
-                                    0% ไม่มีค่าธรรมเนียม
+                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-2 ${settings.truemoney_fee_enabled === "true"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-green-100 text-green-700"
+                                    }`}>
+                                    {settings.truemoney_fee_enabled === "true" ? "หักค่าธรรมเนียม 2.9%" : "0% ไม่มีค่าธรรมเนียม"}
                                 </span>
                                 <p className="text-muted-foreground text-sm mt-2">
                                     เติมเงินด้วยซองอั่งเปา TrueMoney<br />

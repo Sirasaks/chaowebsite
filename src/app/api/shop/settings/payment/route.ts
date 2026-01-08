@@ -13,7 +13,7 @@ export async function GET(request: Request) {
         }
 
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_code', 'bank_account_number', 'bank_account_name', 'bank_transfer_enabled', 'truemoney_angpao_enabled')",
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('bank_code', 'bank_account_number', 'bank_account_name', 'bank_transfer_enabled', 'truemoney_angpao_enabled', 'truemoney_fee_enabled')",
             [shopId]
         );
 

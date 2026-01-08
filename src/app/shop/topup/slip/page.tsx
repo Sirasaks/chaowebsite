@@ -130,7 +130,7 @@ export default function TopupSlipPage() {
                 ย้อนกลับ
             </Link>
 
-            <Card className="border shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border shadow-lg bg-white backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         เติมเงินผ่านธนาคาร

@@ -132,22 +132,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Voucher URL is required" }, { status: 400 });
         }
 
-        // 3. Get Receiver Phone Number (Scoped to Shop)
+        // 3. Get settings (Scoped to Shop)
         const [settingsRows] = await connection.query<RowDataPacket[]>(
-            "SELECT setting_value FROM settings WHERE setting_key = 'truemoney_phone' AND shop_id = ?",
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key IN ('truemoney_phone', 'truemoney_fee_enabled')",
             [shopId]
         );
 
-        let phoneNumber = settingsRows.length > 0 ? settingsRows[0].setting_value : null;
+        const settings: Record<string, string> = {};
+        settingsRows.forEach(row => {
+            settings[row.setting_key] = row.setting_value;
+        });
 
-        if (!phoneNumber) {
-            // Fallback to ENV only if not found in DB (and maybe we shouldn't fallback to ENV for multi-tenant?)
-            // But for now, let's assume ENV is a global fallback or just fail.
-            // Given "shop1" and "shop2", they should have their own phones.
-            // If ENV is used, it means all shops share the same wallet, which is bad.
-            // But to keep it working if DB is empty, I'll leave it but log a warning.
-            phoneNumber = process.env.TMN_PHONE;
-        }
+        let phoneNumber = settings.truemoney_phone || process.env.TMN_PHONE;
+        const feeEnabled = settings.truemoney_fee_enabled === "true";
 
         if (!phoneNumber) {
             console.error("TrueMoney phone number not configured (DB or ENV)");
@@ -166,7 +163,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Redeem success but no data returned" }, { status: 500 });
         }
 
-        const creditAmount = result.amount;
+        // Calculate credit amount (deduct 2.9% fee if enabled)
+        let creditAmount = result.amount;
+        let feeAmount = 0;
+        if (feeEnabled) {
+            feeAmount = Math.round(result.amount * 0.029 * 100) / 100; // 2.9% fee, rounded to 2 decimal places
+            creditAmount = result.amount - feeAmount;
+        }
+
         const voucherId = result.voucherId;
         const senderName = result.ownerName || "Unknown";
 

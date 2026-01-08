@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle, ChevronLeft, Gift } from "lucide-react";
+import { Loader2, AlertCircle, ChevronLeft, Gift, Percent } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ export default function TopupAngpaoPage() {
     const [voucherUrl, setVoucherUrl] = useState("");
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(true);
+    const [feeEnabled, setFeeEnabled] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -29,6 +30,7 @@ export default function TopupAngpaoPage() {
                         router.push("/topup");
                         return;
                     }
+                    setFeeEnabled(data.truemoney_fee_enabled === "true");
                     setChecking(false);
                 } else {
                     setChecking(false);
@@ -96,7 +98,7 @@ export default function TopupAngpaoPage() {
                 ย้อนกลับ
             </Link>
 
-            <Card className="border shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border shadow-lg bg-white backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <div className="mx-auto w-16 h-16  rounded-full flex items-center justify-center mb-4">
                         <Gift className="w-8 h-8 text-primary " />
@@ -107,6 +109,12 @@ export default function TopupAngpaoPage() {
                     <CardDescription>
                         สร้างซองอั่งเปาแล้วนำลิงก์มากรอกเพื่อเติมเครดิต
                     </CardDescription>
+                    {feeEnabled && (
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium">
+                            <Percent className="w-4 h-4" />
+                            หักค่าธรรมเนียม 2.9% จากยอดเติมเงิน
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
