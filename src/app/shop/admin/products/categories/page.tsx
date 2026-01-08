@@ -478,7 +478,7 @@ export default function AdminCategoriesPage() {
                                 id="image"
                                 value={currentCategory.image || ""}
                                 onChange={(e) => setCurrentCategory({ ...currentCategory, image: e.target.value })}
-                                placeholder="https://example.com/image.png"
+                                placeholder="800x450 px (อัตราส่วน 16:9)"
                             />
                         </div>
                     </div>

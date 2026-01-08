@@ -98,7 +98,7 @@ export default function ThemeSettingsPage() {
                                     id="site_logo"
                                     value={settings.site_logo || ""}
                                     onChange={(e) => setSettings({ ...settings, site_logo: e.target.value })}
-                                    placeholder="https://example.com/logo.png"
+                                    placeholder="ไม่จำกัดขนาด (แนวนอน)"
                                 />
                                 {settings.site_logo && (
                                     <div className="mt-2 p-4 border rounded bg-slate-50 flex justify-center">
@@ -113,7 +113,7 @@ export default function ThemeSettingsPage() {
                                     id="site_icon"
                                     value={settings.site_icon || ""}
                                     onChange={(e) => setSettings({ ...settings, site_icon: e.target.value })}
-                                    placeholder="https://example.com/favicon.ico"
+                                    placeholder="32x32 หรือ 64x64 px"
                                 />
                                 {settings.site_icon && (
                                     <div className="mt-2 p-4 border rounded bg-slate-50 flex justify-center">
@@ -128,7 +128,7 @@ export default function ThemeSettingsPage() {
                                     id="site_background"
                                     value={settings.site_background || ""}
                                     onChange={(e) => setSettings({ ...settings, site_background: e.target.value })}
-                                    placeholder="https://example.com/background.jpg"
+                                    placeholder="1920x1080 px"
                                 />
                                 {settings.site_background && (
                                     <div className="mt-2 p-4 border rounded bg-slate-50 flex justify-center overflow-hidden h-40 relative">

@@ -312,7 +312,7 @@ export default function AdminFormsPage() {
                             <Input
                                 value={formData.image}
                                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                placeholder="https://example.com/image.jpg"
+                                placeholder="500x500 px (อัตราส่วน 1:1)"
                             />
                         </div>
 

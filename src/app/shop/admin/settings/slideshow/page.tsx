@@ -134,7 +134,7 @@ export default function SlideshowPage() {
                 <CardContent>
                     <div className="flex gap-4">
                         <Input
-                            placeholder="URL ของรูปภาพ (เช่น https://example.com/banner.jpg)"
+                            placeholder="1200x400 px (อัตราส่วน 3:1)"
                             value={newImageUrl}
                             onChange={(e) => setNewImageUrl(e.target.value)}
                         />

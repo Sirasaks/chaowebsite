@@ -104,7 +104,7 @@ export default function QuickLinksSettings() {
                                     <Input
                                         value={link.image_url}
                                         onChange={(e) => updateLink(index, "image_url", e.target.value)}
-                                        placeholder="https://example.com/banner.png"
+                                        placeholder="800x400 px (อัตราส่วน 2:1)"
                                     />
                                 </div>
                                 <div className="space-y-2">
