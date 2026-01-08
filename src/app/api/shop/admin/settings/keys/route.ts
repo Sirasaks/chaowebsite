@@ -92,14 +92,13 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { slipok_api_key, slipok_branch_id } = body;
+        const { easyslip_access_token } = body;
 
         await connection.beginTransaction();
 
         // Upsert settings
         const settingsToUpdate = [
-            { key: "slipok_api_key", value: slipok_api_key },
-            { key: "slipok_branch_id", value: slipok_branch_id },
+            { key: "easyslip_access_token", value: easyslip_access_token },
         ];
 
         for (const setting of settingsToUpdate) {

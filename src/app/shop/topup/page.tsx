@@ -45,7 +45,7 @@ export default function TopupPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 {settings.truemoney_angpao_enabled === "true" && (
                     <Link href="/topup/angpao" className="group">
-                        <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-red-200 cursor-pointer bg-gradient-to-br from-red-50 to-white">
+                        <Card className="h-full hover:shadow-xl transition-all duration-300 border hover:border-primary cursor-pointer bg-gradient-to-br from-red-50 to-white">
                             <CardHeader className="text-center pb-2">
                                 <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                                     <Gift className="w-10 h-10 text-red-600" />
@@ -69,7 +69,7 @@ export default function TopupPage() {
 
                 {settings.bank_transfer_enabled === "true" && (
                     <Link href="/topup/slip" className="group">
-                        <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer bg-gradient-to-br from-slate-50 to-white">
+                        <Card className="h-full hover:shadow-xl transition-all duration-300 border hover:border-primary cursor-pointer bg-gradient-to-br from-slate-50 to-white">
                             <CardHeader className="text-center pb-2">
                                 <div className="mx-auto w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                                     <CreditCard className="w-10 h-10 text-slate-600" />

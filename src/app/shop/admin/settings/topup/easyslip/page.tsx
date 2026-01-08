@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Key, Building, ChevronDown } from "lucide-react";
+import { Loader2, CreditCard, Key } from "lucide-react";
 import { THAI_BANKS } from "@/lib/thai-banks";
 import Image from "next/image";
 import {
@@ -18,12 +18,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export default function SlipOKSettingsPage() {
+export default function EasySlipSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
-        slipok_api_key: "",
-        slipok_branch_id: "",
+        easyslip_access_token: "",
         bank_transfer_enabled: false,
         bank_code: "",
         bank_account_number: "",
@@ -56,8 +55,7 @@ export default function SlipOKSettingsPage() {
                 const keysData = await keysRes.json();
                 setSettings((prev) => ({
                     ...prev,
-                    slipok_api_key: keysData.slipok_api_key || "",
-                    slipok_branch_id: keysData.slipok_branch_id || "",
+                    easyslip_access_token: keysData.easyslip_access_token || "",
                 }));
             }
         } catch (error) {
@@ -89,8 +87,7 @@ export default function SlipOKSettingsPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    slipok_api_key: settings.slipok_api_key,
-                    slipok_branch_id: settings.slipok_branch_id,
+                    easyslip_access_token: settings.easyslip_access_token,
                 }),
             });
 
@@ -119,7 +116,7 @@ export default function SlipOKSettingsPage() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">ตั้งค่าเช็คสลิปธนาคาร (SlipOK)</h1>
+                <h1 className="text-2xl font-bold">ตั้งค่าเช็คสลิปธนาคาร (EasySlip)</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -128,41 +125,33 @@ export default function SlipOKSettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Key className="h-5 w-5 text-blue-500" />
-                            ตั้งค่า API SlipOK
+                            ตั้งค่า API EasySlip
                         </CardTitle>
                         <CardDescription>
-                            ตั้งค่า API Key และ Branch ID สำหรับตรวจสอบสลิปอัตโนมัติ
+                            ตั้งค่า Access Token สำหรับตรวจสอบสลิปอัตโนมัติ (รับ Token ได้จาก{" "}
+                            <a
+                                href="https://developer.easyslip.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline"
+                            >
+                                developer.easyslip.com
+                            </a>)
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="api_key" className="flex items-center gap-2">
+                            <Label htmlFor="access_token" className="flex items-center gap-2">
                                 <Key className="h-4 w-4" />
-                                API Key
+                                Access Token
                             </Label>
                             <Input
-                                id="api_key"
+                                id="access_token"
                                 type="password"
-                                placeholder="กรอก API Key จาก SlipOK"
-                                value={settings.slipok_api_key}
+                                placeholder="กรอก Access Token จาก EasySlip"
+                                value={settings.easyslip_access_token}
                                 onChange={(e) =>
-                                    setSettings({ ...settings, slipok_api_key: e.target.value })
-                                }
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="branch_id" className="flex items-center gap-2">
-                                <Building className="h-4 w-4" />
-                                Branch ID
-                            </Label>
-                            <Input
-                                id="branch_id"
-                                type="text"
-                                placeholder="กรอก Branch ID"
-                                value={settings.slipok_branch_id}
-                                onChange={(e) =>
-                                    setSettings({ ...settings, slipok_branch_id: e.target.value })
+                                    setSettings({ ...settings, easyslip_access_token: e.target.value })
                                 }
                             />
                         </div>
@@ -282,4 +271,3 @@ export default function SlipOKSettingsPage() {
         </div>
     );
 }
-

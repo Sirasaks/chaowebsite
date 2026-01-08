@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Loader2, AlertCircle, ChevronLeft } from "lucide-react";
+import { Upload, Loader2, AlertCircle, ChevronLeft, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { THAI_BANKS } from "@/lib/thai-banks";
 import Link from "next/link";
@@ -62,11 +62,32 @@ export default function TopupSlipPage() {
 
     const handleUpload = async (uploadFile: File) => {
         setLoading(true);
-        const formData = new FormData();
-        formData.append("file", uploadFile);
 
         try {
-            const res = await fetch("/api/shop/topup/slipok", {
+            // Check if bank account has been changed before uploading
+            const checkRes = await fetch("/api/shop/settings/payment");
+            if (checkRes.ok) {
+                const currentData = await checkRes.json();
+                if (currentData.bank_account_number !== bankDetails?.bank_account_number) {
+                    toast.error("เลขบัญชีถูกเปลี่ยนแปลง โปรดรีเฟรชหน้าเว็บ", {
+                        action: {
+                            label: "รีเฟรช",
+                            onClick: () => window.location.reload(),
+                        },
+                    });
+                    setLoading(false);
+                    setFile(null);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                    return;
+                }
+            }
+
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+
+            const res = await fetch("/api/shop/topup/easyslip", {
                 method: "POST",
                 body: formData,
             });
@@ -109,7 +130,7 @@ export default function TopupSlipPage() {
                 ย้อนกลับ
             </Link>
 
-            <Card className="border-none shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border shadow-lg bg-white/80 backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         เติมเงินผ่านธนาคาร
@@ -146,9 +167,24 @@ export default function TopupSlipPage() {
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">เลขที่บัญชี</span>
-                            <span className="font-mono font-bold text-lg tracking-wide">
-                                {bankDetails?.bank_account_number || "กำลังโหลด..."}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-lg tracking-wide">
+                                    {bankDetails?.bank_account_number || "กำลังโหลด..."}
+                                </span>
+                                {bankDetails?.bank_account_number && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(bankDetails.bank_account_number);
+                                            toast.success("คัดลอกเลขบัญชีแล้ว");
+                                        }}
+                                        className="p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+                                        title="คัดลอกเลขบัญชี"
+                                    >
+                                        <Copy className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">ชื่อบัญชี</span>

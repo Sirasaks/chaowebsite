@@ -265,8 +265,8 @@ export function AdminSidebar() {
                         <SidebarItem
                             icon={CreditCard}
                             label="เช็คสลิปธนาคาร"
-                            href="/admin/settings/topup/slipok"
-                            isActive={pathname === "/admin/settings/topup/slipok"}
+                            href="/admin/settings/topup/easyslip"
+                            isActive={pathname === "/admin/settings/topup/easyslip"}
                         />
                     </SidebarCollapse>
                 </SidebarGroup>

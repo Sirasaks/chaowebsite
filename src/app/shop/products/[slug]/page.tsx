@@ -46,7 +46,7 @@ function ProductDescription({ product, user }: { product: Product, user: any }) 
       </CardHeader>
       <CardContent>
         <div
-          className="text-sm text-muted-foreground [&>a]:text-primary [&>a]:underline"
+          className="text-sm text-muted-foreground [&>a]:text-primary [&>a]:underline whitespace-pre-line"
           style={{ lineHeight: 1.8 }}
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
         />

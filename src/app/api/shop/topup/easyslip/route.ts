@@ -4,12 +4,18 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
+import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-    // Rate limiting: 10 topup attempts per minute per IP
+    const shopId = await getShopIdFromRequest(request);
+    if (!shopId) {
+        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Rate limiting: 10 topup attempts per minute per IP per shop
     const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
-    const { success: rateLimitSuccess } = rateLimit(`master-topup:${ip}`, { limit: 10, windowMs: 60000 });
+    const { success: rateLimitSuccess } = rateLimit(`shop-topup:${shopId}:${ip}`, { limit: 10, windowMs: 60000 });
 
     if (!rateLimitSuccess) {
         return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
@@ -27,25 +33,19 @@ export async function POST(request: Request) {
 
         let userId: number;
         try {
-            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; tokenType?: string };
-
-            // Verify this is a master token
-            if (decoded.tokenType && decoded.tokenType !== 'master') {
-                return NextResponse.json({ error: "Token ไม่ถูกต้อง (Invalid scope)" }, { status: 401 });
-            }
-
-            // Verify user exists in master_users
-            const [userCheck] = await connection.query<RowDataPacket[]>(
-                "SELECT id FROM master_users WHERE id = ?",
-                [decoded.userId]
-            );
-            if (userCheck.length === 0) {
-                return NextResponse.json({ error: "User not found" }, { status: 401 });
-            }
-
+            const decoded = jwt.verify(token, getJwtSecret()) as { userId: number };
             userId = decoded.userId;
         } catch (err) {
             return NextResponse.json({ error: "Token ไม่ถูกต้อง" }, { status: 401 });
+        }
+
+        // Verify user belongs to shop
+        const [users] = await connection.query<RowDataPacket[]>(
+            "SELECT id FROM users WHERE id = ? AND shop_id = ?",
+            [userId, shopId]
+        );
+        if (users.length === 0) {
+            return NextResponse.json({ error: "User not found in this shop" }, { status: 404 });
         }
 
         // 2. Parse Form Data
@@ -56,9 +56,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "กรุณาอัพโหลดรูปภาพ" }, { status: 400 });
         }
 
-        // 3. Fetch EasySlip settings from master_settings
+        // 3. Fetch EasySlip settings from database (Scoped to Shop)
         const [settingsRows] = await connection.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM master_settings WHERE setting_key = 'easyslip_access_token'"
+            "SELECT setting_key, setting_value FROM settings WHERE setting_key = 'easyslip_access_token' AND shop_id = ?",
+            [shopId]
         );
 
         const settings: Record<string, string> = {};
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         const EASYSLIP_ACCESS_TOKEN = settings.easyslip_access_token || process.env.EASYSLIP_ACCESS_TOKEN;
 
         if (!EASYSLIP_ACCESS_TOKEN) {
-            console.error("EasySlip configuration missing (Master)");
+            console.error("EasySlip configuration missing");
             return NextResponse.json({ error: "System configuration error" }, { status: 500 });
         }
 
@@ -139,33 +140,34 @@ export async function POST(request: Request) {
         const receiverBankAccount = slipData.data.receiver?.account?.bank?.account?.replace(/[^0-9]/g, '') || '';
         const receiverProxyAccount = slipData.data.receiver?.account?.proxy?.account?.replace(/[^0-9]/g, '') || '';
 
-        // 5. Verify receiver account matches master's configured bank account
-        const [masterBankSettings] = await connection.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM master_settings WHERE setting_key = 'bank_account_number'"
+        // 5. Verify receiver account matches shop's configured bank account
+        const [shopBankSettings] = await connection.query<RowDataPacket[]>(
+            "SELECT setting_key, setting_value FROM settings WHERE setting_key = 'bank_account_number' AND shop_id = ?",
+            [shopId]
         );
 
-        const masterBankAccountRaw = masterBankSettings.find(s => s.setting_key === 'bank_account_number')?.setting_value || '';
-        const masterBankAccount = masterBankAccountRaw.replace(/[^0-9]/g, ''); // Remove dashes and spaces
+        const shopBankAccountRaw = shopBankSettings.find(s => s.setting_key === 'bank_account_number')?.setting_value || '';
+        const shopBankAccount = shopBankAccountRaw.replace(/[^0-9]/g, ''); // Remove dashes and spaces
 
-        if (!masterBankAccount) {
-            console.error("Master bank account not configured");
+        if (!shopBankAccount) {
+            console.error("Shop bank account not configured");
             return NextResponse.json(
-                { error: "ระบบยังไม่ได้ตั้งค่าบัญชีธนาคาร กรุณาติดต่อผู้ดูแลระบบ" },
+                { error: "ร้านค้ายังไม่ได้ตั้งค่าบัญชีธนาคาร กรุณาติดต่อผู้ดูแลระบบ" },
                 { status: 500 }
             );
         }
 
         // Check if receiver account matches (check both bank account and proxy/PromptPay)
         const isValidReceiver =
-            (receiverBankAccount && receiverBankAccount.includes(masterBankAccount.slice(-4))) ||
-            (receiverBankAccount && masterBankAccount.includes(receiverBankAccount.slice(-4))) ||
-            (receiverProxyAccount && receiverProxyAccount.includes(masterBankAccount.slice(-4))) ||
-            (receiverProxyAccount && masterBankAccount.includes(receiverProxyAccount.slice(-4)));
+            (receiverBankAccount && receiverBankAccount.includes(shopBankAccount.slice(-4))) ||
+            (receiverBankAccount && shopBankAccount.includes(receiverBankAccount.slice(-4))) ||
+            (receiverProxyAccount && receiverProxyAccount.includes(shopBankAccount.slice(-4))) ||
+            (receiverProxyAccount && shopBankAccount.includes(receiverProxyAccount.slice(-4)));
 
         if (!isValidReceiver) {
-            console.error(`Receiver account mismatch. Master: ${masterBankAccount}, Slip Bank: ${receiverBankAccount}, Slip Proxy: ${receiverProxyAccount}`);
+            console.error(`Receiver account mismatch. Shop: ${shopBankAccount}, Slip Bank: ${receiverBankAccount}, Slip Proxy: ${receiverProxyAccount}`);
             return NextResponse.json(
-                { error: "บัญชีผู้รับเงินในสลิปไม่ตรงกับบัญชีระบบ กรุณาโอนเงินมายังบัญชีที่ถูกต้อง" },
+                { error: "บัญชีผู้รับเงินในสลิปไม่ตรงกับบัญชีร้านค้า กรุณาโอนเงินมายังบัญชีที่ถูกต้อง" },
                 { status: 400 }
             );
         }
@@ -181,10 +183,10 @@ export async function POST(request: Request) {
         // 5. Database Transaction
         await connection.beginTransaction();
 
-        // Check for duplicate transaction in master_topup_history
+        // Check for duplicate transaction in OUR database
         const [existing] = await connection.query<RowDataPacket[]>(
-            "SELECT id FROM master_topup_history WHERE trans_ref = ? FOR UPDATE",
-            [transRef]
+            "SELECT id FROM topup_history WHERE trans_ref = ? AND shop_id = ? FOR UPDATE",
+            [transRef, shopId]
         );
 
         if (existing.length > 0) {
@@ -195,16 +197,16 @@ export async function POST(request: Request) {
             );
         }
 
-        // Update Master User Credit
+        // Update User Credit
         await connection.query(
-            "UPDATE master_users SET credit = credit + ? WHERE id = ?",
-            [amount, userId]
+            "UPDATE users SET credit = credit + ? WHERE id = ? AND shop_id = ?",
+            [amount, userId, shopId]
         );
 
-        // Record Transaction
+        // Record Transaction (Scoped to Shop)
         await connection.query(
-            "INSERT INTO master_topup_history (user_id, trans_ref, amount, sender_name, receiver_name, status) VALUES (?, ?, ?, ?, ?, 'completed')",
-            [userId, transRef, amount, sender?.displayName || "Unknown", receiver?.displayName || "Unknown"]
+            "INSERT INTO topup_history (shop_id, user_id, trans_ref, amount, sender_name, receiver_name) VALUES (?, ?, ?, ?, ?, ?)",
+            [shopId, userId, transRef, amount, sender?.displayName || "Unknown", receiver?.displayName || "Unknown"]
         );
 
         await connection.commit();
