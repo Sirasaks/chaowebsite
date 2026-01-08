@@ -89,7 +89,13 @@ export default function RecommendedCategoriesPage() {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <HomeTableSkeleton />
+                        <HomeTableSkeleton
+                            columns={[
+                                { header: "Order", width: "w-[80px]", skeletonWidth: "w-4", center: true },
+                                { header: "Image", skeletonWidth: "w-10 h-10 rounded-md" },
+                                { header: "Name", skeletonWidth: "w-48" },
+                            ]}
+                        />
                     ) : (
                         <div className="rounded-md border">
                             <Table>

@@ -67,7 +67,9 @@ export default function TruemoneySettingsPage() {
         }
     };
 
-
+    if (loading) {
+        return null;
+    }
 
     return (
         <div className="space-y-6">

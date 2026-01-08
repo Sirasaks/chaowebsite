@@ -105,7 +105,9 @@ export default function EasySlipSettingsPage() {
 
     const selectedBank = THAI_BANKS.find((b) => b.code === settings.bank_code);
 
-
+    if (loading) {
+        return null;
+    }
 
     return (
         <div className="space-y-6">

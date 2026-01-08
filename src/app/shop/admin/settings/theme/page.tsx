@@ -74,7 +74,9 @@ export default function ThemeSettingsPage() {
             setSaving(false);
         }
     };
-
+    if (loading) {
+        return null;
+    }
 
     return (
         <div className="space-y-6">
