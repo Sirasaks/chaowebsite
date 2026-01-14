@@ -6,6 +6,7 @@ import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
+import { decrypt, isEncrypted } from "@/lib/crypto";
 
 export async function POST(request: Request) {
     const shopId = await getShopIdFromRequest(request);
@@ -62,12 +63,18 @@ export async function POST(request: Request) {
             [shopId]
         );
 
-        const settings: Record<string, string> = {};
-        settingsRows.forEach(row => {
-            settings[row.setting_key] = row.setting_value;
-        });
+        let EASYSLIP_ACCESS_TOKEN: string | undefined;
 
-        const EASYSLIP_ACCESS_TOKEN = settings.easyslip_access_token || process.env.EASYSLIP_ACCESS_TOKEN;
+        if (settingsRows.length > 0 && settingsRows[0].setting_value) {
+            const storedToken = settingsRows[0].setting_value;
+            // Decrypt if encrypted, otherwise use as-is (for backwards compatibility)
+            EASYSLIP_ACCESS_TOKEN = isEncrypted(storedToken) ? decrypt(storedToken) : storedToken;
+        }
+
+        // Fallback to environment variable
+        if (!EASYSLIP_ACCESS_TOKEN) {
+            EASYSLIP_ACCESS_TOKEN = process.env.EASYSLIP_ACCESS_TOKEN;
+        }
 
         if (!EASYSLIP_ACCESS_TOKEN) {
             console.error("EasySlip configuration missing");

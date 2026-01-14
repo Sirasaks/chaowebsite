@@ -15,8 +15,6 @@ interface RedeemResponse {
 
 async function redeemAngpao(phoneNumber: string, voucherUrl: string): Promise<RedeemResponse> {
     try {
-        console.log("Redeeming Angpao:", { phoneNumber, voucherUrl });
-
         // Extract voucher code from URL
         let code: string | null = null;
         try {
@@ -40,7 +38,7 @@ async function redeemAngpao(phoneNumber: string, voucherUrl: string): Promise<Re
             }
         }
 
-        console.log("Extracted code:", code);
+
 
         // Security Check: Ensure code contains only alphanumeric characters
         if (!/^[a-zA-Z0-9]+$/.test(code)) {

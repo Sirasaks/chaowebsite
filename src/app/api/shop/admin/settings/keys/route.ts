@@ -5,12 +5,7 @@ import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
-
-// Helper function to mask sensitive API keys
-function maskApiKey(key: string | null | undefined): string {
-    if (!key || key.length <= 6) return "***";
-    return key.substring(0, 3) + "***" + key.substring(key.length - 3);
-}
+import { encrypt } from "@/lib/crypto";
 
 export async function GET(request: Request) {
     try {
@@ -46,21 +41,14 @@ export async function GET(request: Request) {
         `);
 
         const [rows] = await pool.query<RowDataPacket[]>(
-            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ?",
+            "SELECT setting_key, setting_value FROM settings WHERE shop_id = ? AND setting_key = 'easyslip_access_token'",
             [shopId]
         );
 
-        const settings: Record<string, string> = {};
-        rows.forEach((row) => {
-            // SECURITY FIX: Mask sensitive API keys
-            if (row.setting_key.includes('api_key') || row.setting_key.includes('_key')) {
-                settings[row.setting_key] = maskApiKey(row.setting_value);
-            } else {
-                settings[row.setting_key] = row.setting_value;
-            }
-        });
+        // Return only a flag indicating if token exists, never the actual value
+        const hasEasyslipToken = rows.length > 0 && rows[0].setting_value && rows[0].setting_value.length > 0;
 
-        return NextResponse.json(settings);
+        return NextResponse.json({ hasEasyslipToken });
 
     } catch (error: any) {
         console.error("Fetch Settings Error:", error);
@@ -94,21 +82,20 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { easyslip_access_token } = body;
 
+        // Only save if a new token is provided (not empty)
+        if (!easyslip_access_token || easyslip_access_token.trim() === '') {
+            return NextResponse.json({ message: "ไม่มีการเปลี่ยนแปลง Token" });
+        }
+
         await connection.beginTransaction();
 
-        // Upsert settings
-        const settingsToUpdate = [
-            { key: "easyslip_access_token", value: easyslip_access_token },
-        ];
+        // Encrypt the token before storing
+        const encryptedToken = encrypt(easyslip_access_token);
 
-        for (const setting of settingsToUpdate) {
-            if (setting.value !== undefined) {
-                await connection.query(
-                    "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-                    [shopId, setting.key, setting.value, setting.value]
-                );
-            }
-        }
+        await connection.query(
+            "INSERT INTO settings (shop_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+            [shopId, "easyslip_access_token", encryptedToken, encryptedToken]
+        );
 
         await connection.commit();
 

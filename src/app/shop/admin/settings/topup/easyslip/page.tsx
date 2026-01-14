@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Key } from "lucide-react";
+import { Loader2, CreditCard, Key, Check, Pencil } from "lucide-react";
 import { THAI_BANKS } from "@/lib/thai-banks";
 import Image from "next/image";
 import {
@@ -17,12 +17,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export default function EasySlipSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [hasToken, setHasToken] = useState(false);
+    const [isEditingToken, setIsEditingToken] = useState(false);
+    const [newToken, setNewToken] = useState("");
     const [settings, setSettings] = useState({
-        easyslip_access_token: "",
         bank_transfer_enabled: false,
         bank_code: "",
         bank_account_number: "",
@@ -37,26 +40,22 @@ export default function EasySlipSettingsPage() {
         try {
             // Fetch payment settings
             const paymentRes = await fetch("/api/shop/admin/settings/payment");
-            // Fetch API keys settings
+            // Fetch API keys settings (now returns hasEasyslipToken flag)
             const keysRes = await fetch("/api/shop/admin/settings/keys");
 
             if (paymentRes.ok) {
                 const paymentData = await paymentRes.json();
-                setSettings((prev) => ({
-                    ...prev,
+                setSettings({
                     bank_transfer_enabled: paymentData.bank_transfer_enabled === "true",
                     bank_code: paymentData.bank_code || "",
                     bank_account_number: paymentData.bank_account_number || "",
                     bank_account_name: paymentData.bank_account_name || "",
-                }));
+                });
             }
 
             if (keysRes.ok) {
                 const keysData = await keysRes.json();
-                setSettings((prev) => ({
-                    ...prev,
-                    easyslip_access_token: keysData.easyslip_access_token || "",
-                }));
+                setHasToken(keysData.hasEasyslipToken || false);
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -82,16 +81,24 @@ export default function EasySlipSettingsPage() {
                 }),
             });
 
-            // Save API keys
-            const keysRes = await fetch("/api/shop/admin/settings/keys", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    easyslip_access_token: settings.easyslip_access_token,
-                }),
-            });
+            // Save API keys only if user is editing and has provided a new token
+            if (isEditingToken && newToken.trim()) {
+                const keysRes = await fetch("/api/shop/admin/settings/keys", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        easyslip_access_token: newToken,
+                    }),
+                });
 
-            if (paymentRes.ok && keysRes.ok) {
+                if (keysRes.ok) {
+                    setHasToken(true);
+                    setIsEditingToken(false);
+                    setNewToken("");
+                }
+            }
+
+            if (paymentRes.ok) {
                 toast.success("บันทึกการตั้งค่าเรียบร้อยแล้ว");
             } else {
                 toast.error("เกิดข้อผิดพลาดในการบันทึก");
@@ -141,15 +148,59 @@ export default function EasySlipSettingsPage() {
                                 <Key className="h-4 w-4" />
                                 Access Token
                             </Label>
-                            <Input
-                                id="access_token"
-                                type="password"
-                                placeholder="กรอก Access Token จาก EasySlip"
-                                value={settings.easyslip_access_token}
-                                onChange={(e) =>
-                                    setSettings({ ...settings, easyslip_access_token: e.target.value })
-                                }
-                            />
+
+                            {!isEditingToken ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-muted rounded-md border">
+                                        <span className="font-mono text-muted-foreground">
+                                            ••••••••••••••••
+                                        </span>
+                                        {hasToken && (
+                                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                                <Check className="h-3 w-3 mr-1" />
+                                                ตั้งค่าแล้ว
+                                            </Badge>
+                                        )}
+                                        {!hasToken && (
+                                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                                ยังไม่ได้ตั้งค่า
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsEditingToken(true)}
+                                    >
+                                        <Pencil className="h-4 w-4 mr-2" />
+                                        {hasToken ? "เปลี่ยน Token" : "ตั้งค่า Token"}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <Input
+                                        id="access_token"
+                                        type="password"
+                                        placeholder="กรอก Access Token ใหม่"
+                                        value={newToken}
+                                        onChange={(e) => setNewToken(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setIsEditingToken(false);
+                                                setNewToken("");
+                                            }}
+                                        >
+                                            ยกเลิก
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -267,3 +318,4 @@ export default function EasySlipSettingsPage() {
         </div>
     );
 }
+
