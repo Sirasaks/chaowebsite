@@ -59,6 +59,19 @@ export default async function RootLayout({
             -webkit-text-fill-color: transparent;
             background-clip: text;
           }
+          .group:hover .text-gradient-primary-hoverable {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: white !important;
+            background-clip: unset !important;
+          }
+          .text-gradient-primary-hoverable {
+            background: linear-gradient(135deg, ${settings.primary_color} 0%, ${settings.secondary_color || '#8b5cf6'} 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s ease;
+          }
           body {
             background-image: ${settings.site_background ? `url('${settings.site_background}')` : 'none'};
             background-size: cover;
