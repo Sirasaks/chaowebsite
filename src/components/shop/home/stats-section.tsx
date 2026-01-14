@@ -48,7 +48,7 @@ function StatCard({ label, value, unit, icon }: StatCardProps) {
             </div>
 
             {/* Icon */}
-            <div className="relative z-10 rounded-full bg-gradient-primary group-hover:bg-white/20 group-hover:scale-150 p-3 text-white transition-all duration-300">
+            <div className="relative z-10 rounded-full bg-gradient-primary group-hover:bg-white/20 group-hover:scale-200 p-3 text-white transition-all duration-300">
                 {icon}
             </div>
         </div>

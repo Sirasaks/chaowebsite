@@ -77,8 +77,9 @@ export function MasterAuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
+  // Return fallback values if used outside AuthProvider (e.g., in SSR or isolated components)
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    return { user: null, setUser: () => { }, loading: false, error: null }
   }
   return context
 }
