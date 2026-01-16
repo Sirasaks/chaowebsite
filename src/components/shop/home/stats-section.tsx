@@ -28,7 +28,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, unit, icon }: StatCardProps) {
     return (
-        <div className="group relative flex items-center justify-between rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg transition-all duration-300 bg-white backdrop-blur-sm border-none overflow-hidden cursor-pointer">
+        <div className="group relative flex items-center justify-between rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg transition-all duration-300 bg-white backdrop-blur-sm border overflow-hidden cursor-pointer">
             {/* Expanding Circle Background */}
             <div className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-gradient-primary transition-all duration-500 ease-out group-hover:scale-[12] group-hover:opacity-100 z-0" />
 
