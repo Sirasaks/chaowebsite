@@ -34,7 +34,7 @@ export default async function CategoriesPage() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <h1 className="text-3xl font-bold mb-8 tracking-tight">หมวดหมู่สินค้า</h1>
+      <h1 className="text-3xl font-bold mb-8 tracking-tight bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">หมวดหมู่สินค้า</h1>
 
       {categories.length === 0 ? (
         <p className="text-center text-muted-foreground">

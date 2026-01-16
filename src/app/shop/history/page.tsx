@@ -167,19 +167,19 @@ function HistoryContent() {
                 </BreadcrumbList>
             </Breadcrumb>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold">ประวัติการสั่งซื้อ</h1>
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">ประวัติการสั่งซื้อ</h1>
                 <div className="relative w-full md:w-72">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="ค้นหาชื่อสินค้า..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-8"
+                        className="pl-8 bg-white"
                     />
                 </div>
             </div>
 
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border overflow-x-auto bg-white">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -316,7 +316,6 @@ function HistoryContent() {
             </div >
             <div className="flex items-center justify-end space-x-2 py-4">
                 <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
                     disabled={currentPage === 1 || loading}
@@ -327,7 +326,6 @@ function HistoryContent() {
                     หน้า {currentPage} จาก {totalPages || 1}
                 </div>
                 <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
                     disabled={currentPage === totalPages || totalPages === 0 || loading}

@@ -85,31 +85,49 @@ export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { name, price, image, description, type, account, is_recommended, display_order, is_active, category_id } = body;
+        const { name, price, image, description, type, account, is_recommended, display_order, is_active, category_id, slug: inputSlug } = body;
 
         if (!name || !price || !type) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        let slug = generateSlug(name);
+        let slug: string;
 
-        // Ensure slug is unique for this shop
-        let counter = 1;
-        let originalSlug = slug;
+        if (inputSlug && inputSlug.trim()) {
+            // User provided a slug - validate it
+            slug = inputSlug.trim().toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
 
-        while (true) {
+            // Check if slug already exists for this shop
             const [existing] = await connection.query<RowDataPacket[]>(
                 "SELECT id FROM products WHERE slug = ? AND shop_id = ?",
                 [slug, shopId]
             );
 
-            if (existing.length === 0) {
-                break; // Slug is unique
+            if (existing.length > 0) {
+                connection.release();
+                return NextResponse.json({ error: "URL นี้ถูกใช้แล้ว กรุณาใช้ URL อื่น" }, { status: 400 });
             }
+        } else {
+            // No slug provided - generate random one
+            const randomId = Math.random().toString(36).substring(2, 10);
+            slug = randomId;
 
-            // Slug exists, append counter
-            slug = `${originalSlug}-${counter}`;
-            counter++;
+            // Ensure random slug is unique (very unlikely to conflict but just in case)
+            let counter = 1;
+            let originalSlug = slug;
+            while (true) {
+                const [existing] = await connection.query<RowDataPacket[]>(
+                    "SELECT id FROM products WHERE slug = ? AND shop_id = ?",
+                    [slug, shopId]
+                );
+
+                if (existing.length === 0) {
+                    break;
+                }
+
+                slug = `${originalSlug}-${counter}`;
+                counter++;
+            }
         }
 
         // Validate category_id belongs to this shop
@@ -164,7 +182,7 @@ export async function PUT(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { id, name, price, image, description, account, is_recommended, display_order, is_active, category_id } = body;
+        const { id, name, price, image, description, account, is_recommended, display_order, is_active, category_id, slug: inputSlug } = body;
 
         if (!id) {
             return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
@@ -182,6 +200,24 @@ export async function PUT(request: Request) {
         if (is_recommended !== undefined) { updates.push("is_recommended = ?"); params.push(is_recommended); }
         if (display_order !== undefined) { updates.push("display_order = ?"); params.push(display_order); }
         if (is_active !== undefined) { updates.push("is_active = ?"); params.push(is_active); }
+
+        // Handle slug update
+        if (inputSlug !== undefined) {
+            const slug = inputSlug.trim().toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+            if (slug) {
+                // Check if slug already exists for another product in this shop
+                const [existing] = await connection.query<RowDataPacket[]>(
+                    "SELECT id FROM products WHERE slug = ? AND shop_id = ? AND id != ?",
+                    [slug, shopId, id]
+                );
+                if (existing.length > 0) {
+                    connection.release();
+                    return NextResponse.json({ error: "URL นี้ถูกใช้แล้ว กรุณาใช้ URL อื่น" }, { status: 400 });
+                }
+                updates.push("slug = ?"); params.push(slug);
+            }
+        }
+
         if (category_id !== undefined) {
             // Validate category_id belongs to this shop (null is allowed to remove category)
             if (category_id !== null) {

@@ -53,6 +53,7 @@ export default function AdminAccountsPage() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState({
         name: "",
+        slug: "",
         price: "",
         image: "",
         description: "",
@@ -89,11 +90,12 @@ export default function AdminAccountsPage() {
         fetchData();
     }, []);
 
-    const handleOpenDialog = (product?: Product & { category_id?: number }) => {
+    const handleOpenDialog = (product?: Product & { category_id?: number; slug?: string }) => {
         if (product) {
             setEditingProduct(product);
             setFormData({
                 name: product.name,
+                slug: product.slug || "",
                 price: String(product.price),
                 image: product.image,
                 description: product.description,
@@ -104,6 +106,7 @@ export default function AdminAccountsPage() {
             setEditingProduct(null);
             setFormData({
                 name: "",
+                slug: "",
                 price: "",
                 image: "",
                 description: "",
@@ -127,10 +130,15 @@ export default function AdminAccountsPage() {
         try {
             const method = editingProduct ? "PUT" : "POST";
             const body = {
-                ...formData,
+                name: formData.name,
+                slug: formData.slug,
+                price: formData.price,
+                image: formData.image,
+                description: formData.description,
+                account: formData.account,
                 type: "account",
                 id: editingProduct?.id,
-                category_id: formData.category_id ? parseInt(formData.category_id) : null,
+                category_id: formData.category_id && formData.category_id !== "none" ? parseInt(formData.category_id) : null,
             };
 
             const res = await fetch("/api/shop/admin/products", {
@@ -139,14 +147,17 @@ export default function AdminAccountsPage() {
                 body: JSON.stringify(body),
             });
 
-            if (!res.ok) throw new Error("Failed to save product");
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to save product");
+            }
 
             toast.success(editingProduct ? "Product updated" : "Product created");
             setIsDialogOpen(false);
             fetchData();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Operation failed");
+            toast.error(error.message || "Operation failed");
         } finally {
             setSubmitting(false);
         }
@@ -317,6 +328,18 @@ export default function AdminAccountsPage() {
                                     required
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>URL ห้ามเป็นภาษาไทยและเว้นวรรค</Label>
+                            <Input
+                                value={formData.slug}
+                                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                placeholder="เช่น netflix-premium, youtube-1month (ถ้าไม่ใส่จะสุ่มให้อัตโนมัติ)"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                ถ้าไม่ใส่ URL ระบบจะสร้างให้อัตโนมัติ
+                            </p>
                         </div>
 
                         <div className="space-y-2">

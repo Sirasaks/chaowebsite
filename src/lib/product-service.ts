@@ -16,6 +16,8 @@ export interface Product {
     is_active?: boolean | number; // Database returns 0/1 as number, but can be boolean
     sold?: number;
     no_agent_discount?: boolean | number;
+    category_name?: string;
+    category_slug?: string;
 }
 
 export async function getProductsByCategoryId(categoryId: number, shopId: number): Promise<Product[]> {
@@ -54,7 +56,7 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
 export async function getProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
     try {
         let query = `
-            SELECT p.*, c.no_agent_discount 
+            SELECT p.*, c.no_agent_discount, c.name as category_name, c.slug as category_slug 
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE p.slug = ? AND p.is_active = 1

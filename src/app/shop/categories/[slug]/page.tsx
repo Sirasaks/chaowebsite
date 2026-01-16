@@ -59,7 +59,7 @@ export default async function CategoryPage({ params }: PageProps) {
       </Breadcrumb>
 
       {/* Title */}
-      <h1 className="text-3xl font-bold mb-6">{category.name}</h1>
+      <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">{category.name}</h1>
 
       {/* Products */}
       {products.length === 0 ? (

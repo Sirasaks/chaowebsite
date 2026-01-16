@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
+import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 
@@ -34,10 +35,24 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
 function BreadcrumbLink({
   asChild,
   className,
+  href,
   ...props
 }: React.ComponentProps<"a"> & {
   asChild?: boolean
+  href?: string
 }) {
+  // Use Next.js Link for client-side navigation (no page reload)
+  if (!asChild && href) {
+    return (
+      <Link
+        href={href}
+        data-slot="breadcrumb-link"
+        className={cn("hover:text-foreground transition-colors", className)}
+        {...props}
+      />
+    )
+  }
+
   const Comp = asChild ? Slot : "a"
 
   return (
@@ -56,7 +71,7 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn("text-foreground font-normal", className)}
+      className={cn("text-primary font-normal", className)}
       {...props}
     />
   )

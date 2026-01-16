@@ -24,6 +24,7 @@ import { getShopIdFromContext } from "@/lib/shop-helper";
 import { ProductPrice } from "@/components/shop/home/product-price";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -88,6 +89,14 @@ export default async function ProductsPage({ params }: PageProps) {
           <BreadcrumbItem>
             <BreadcrumbLink href="/categories">หมวดหมู่</BreadcrumbLink>
           </BreadcrumbItem>
+          {product.category_name && product.category_slug && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/categories/${product.category_slug}`}>{product.category_name}</BreadcrumbLink>
+              </BreadcrumbItem>
+            </>
+          )}
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage>{product.name}</BreadcrumbPage>
@@ -97,7 +106,7 @@ export default async function ProductsPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:items-start">
         {/* Left: Product Image */}
-        <Card className="md:sticky md:top-8 overflow-hidden p-0">
+        <Card className="md:sticky md:top-8 overflow-hidden p-0 border-none">
           <div className="aspect-square relative">
             <img
               src={product.image || "/placeholder-image.png"}
