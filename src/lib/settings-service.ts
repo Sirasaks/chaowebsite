@@ -11,6 +11,7 @@ export interface SiteSettings {
     primary_color: string;
     secondary_color: string;
     contact_link?: string;
+    site_font?: string;
 }
 
 export async function getSiteSettings(shopIdOverride?: number): Promise<SiteSettings> {

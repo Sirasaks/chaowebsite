@@ -45,7 +45,7 @@ export default async function CategoriesPage() {
           {categories.map((category, index) => (
             <div key={category.id}>
               <Link href={`/categories/${category.slug}`} passHref>
-                <Card className="rounded-lg overflow-hidden relative group h-48 cursor-pointer shadow hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col p-0">
+                <Card className="border-none rounded-lg overflow-hidden relative group h-48 cursor-pointer shadow hover:shadow-lg transition transform hover:-translate-y-1 flex flex-col p-0">
                   <img
                     src={category.image || "/placeholder-image.png"}
                     alt={category.name}

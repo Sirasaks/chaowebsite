@@ -40,7 +40,7 @@ export async function PUT(req: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await req.json();
-        const { site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text } = body;
+        const { site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text, site_font } = body;
 
         // Check if settings exist for this shop
         const [existing] = await connection.query<RowDataPacket[]>(
@@ -62,6 +62,7 @@ export async function PUT(req: Request) {
             if (secondary_color !== undefined) { updates.push("secondary_color = ?"); params.push(secondary_color); }
             if (contact_link !== undefined) { updates.push("contact_link = ?"); params.push(contact_link); }
             if (announcement_text !== undefined) { updates.push("announcement_text = ?"); params.push(announcement_text); }
+            if (site_font !== undefined) { updates.push("site_font = ?"); params.push(site_font); }
 
             if (updates.length > 0) {
                 params.push(shopId);

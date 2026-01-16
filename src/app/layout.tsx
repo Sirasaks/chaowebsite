@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import { Noto_Sans_Thai, Prompt, Kanit, Pridi } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { getCachedSettings } from "@/lib/settings-cache";
@@ -7,15 +7,45 @@ import { Toaster } from "@/components/ui/sonner";
 import { headers } from "next/headers";
 import NextTopLoader from 'nextjs-toploader';
 
-const noto_sans_thai = Noto_Sans_Thai({
+// Initialize all fonts
+const notoSansThai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
-  weight: ["400", "700"],
-  display: 'swap', // ✨ Optimize font loading
-  preload: true,
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+  variable: '--font-noto-sans-thai',
 });
 
+const prompt = Prompt({
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+  variable: '--font-prompt',
+});
+
+const kanit = Kanit({
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+  variable: '--font-kanit',
+});
+
+const pridi = Pridi({
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+  variable: '--font-pridi',
+});
+
+// Font mapping
+const fontMap: Record<string, { variable: string; className: string }> = {
+  noto_sans_thai: { variable: '--font-noto-sans-thai', className: notoSansThai.className },
+  prompt: { variable: '--font-prompt', className: prompt.className },
+  kanit: { variable: '--font-kanit', className: kanit.className },
+  pridi: { variable: '--font-pridi', className: pridi.className },
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getCachedSettings(); // ✨ Use cached settings
+  const settings = await getCachedSettings();
   return {
     title: settings.site_title,
     description: settings.site_description || "ร้านค้าออนไลน์ของคุณ",
@@ -32,10 +62,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getCachedSettings(); // ✨ Use cached settings (no duplicate DB call!)
+  const settings = await getCachedSettings();
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
   const isAdminPage = pathname.startsWith("/admin");
+
+  // Get selected font or default to Noto Sans Thai
+  const selectedFont = fontMap[settings.site_font || 'noto_sans_thai'] || fontMap.noto_sans_thai;
 
   return (
     <html lang="th" suppressHydrationWarning>
@@ -88,7 +121,7 @@ export default async function RootLayout({
           }
         `}</style>
       </head>
-      <body className={noto_sans_thai.className} suppressHydrationWarning={true}>
+      <body className={selectedFont.className} suppressHydrationWarning={true}>
         <NextTopLoader
           color={settings.primary_color || "#2299DD"}
           initialPosition={0.08}
@@ -108,3 +141,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

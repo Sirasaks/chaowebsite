@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const connection = await pool.getConnection();
     try {
         const [rows] = await connection.query<RowDataPacket[]>(
-            "SELECT site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text FROM site_settings WHERE shop_id = ?",
+            "SELECT site_title, site_description, site_icon, site_logo, site_background, primary_color, secondary_color, contact_link, announcement_text, site_font FROM site_settings WHERE shop_id = ?",
             [shopId]
         );
 
@@ -29,7 +29,8 @@ export async function GET(req: Request) {
                 primary_color: '#ea580c',
                 secondary_color: '#8b5cf6',
                 contact_link: '',
-                announcement_text: ''
+                announcement_text: '',
+                site_font: 'noto_sans_thai'
             });
         }
 

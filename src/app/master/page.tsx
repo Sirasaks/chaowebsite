@@ -13,7 +13,9 @@ import {
     Store,
     BarChart3,
     Star,
-    Rocket
+    Rocket,
+    Palette,
+    Smartphone
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -64,14 +66,14 @@ const features = [
         description: "จัดส่งไอดีและรหัสทันทีหลังชำระเงิน"
     },
     {
-        icon: BarChart3,
-        title: "Dashboard ครบครัน",
-        description: "ติดตามยอดขายและสถิติแบบ Real-time"
+        icon: Smartphone,
+        title: "รองรับทุกหน้าจอ",
+        description: "Responsive Design แสดงผลสวยงามทุกอุปกรณ์"
     },
     {
-        icon: HeadphonesIcon,
-        title: "ซัพพอร์ต 24 ชม.",
-        description: "ทีมงานพร้อมช่วยเหลือตลอดเวลา"
+        icon: Palette,
+        title: "ปรับแต่งได้อิสระ",
+        description: "No-Code ตั้งค่าร้านค้าได้ง่าย ไม่ต้องเขียนโค้ด"
     }
 ];
 
@@ -90,55 +92,61 @@ export default function MasterPage() {
     return (
         <div className="min-h-screen bg-white">
             {/* Hero Section */}
-            <section className="relative">
-                <div className="max-w-5xl mx-auto px-6 py-32 text-center">
-                    <div className={`transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-                        <Badge variant="secondary" className="mb-8">
-                            แพลตฟอร์มสร้างร้านค้าออนไลน์
-                        </Badge>
-                    </div>
+            <section className="relative overflow-hidden">
+                {/* Background Effects */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute top-40 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-32 bg-gradient-to-t from-slate-50 to-transparent" />
+                </div>
+
+                <div className="relative max-w-5xl mx-auto px-6 py-32 text-center">
+
 
                     <h1
-                        className={`text-5xl md:text-6xl font-bold tracking-tight text-slate-900 leading-tight transition-all duration-700 delay-100 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+                        className={`text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 leading-tight transition-all duration-700 delay-100 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
                     >
                         สร้างร้านค้าออนไลน์
                         <br />
-                        <span className="text-primary">ได้ในไม่กี่นาที</span>
+                        <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                            ได้ในไม่กี่นาที
+                        </span>
                     </h1>
 
                     <p
                         className={`mt-6 text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed transition-all duration-700 delay-200 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
                     >
-                        เปิดร้านขายไอดีเกม บัตรเติมเงิน และสินค้าดิจิทัล
-                        พร้อมระบบส่งของอัตโนมัติ
+                        เปิดร้านขายไอดีเกม และสินค้าดิจิทัล
+                        <br className="hidden md:block" />
+                        พร้อมระบบส่งของอัตโนมัติ ดูแลคุณตลอด 24 ชั่วโมง
                     </p>
 
-                    <div className={`mt-10 flex gap-4 justify-center transition-all duration-700 delay-300 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+                    <div className={`mt-10 flex flex-col sm:flex-row gap-4 justify-center transition-all duration-700 delay-300 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
                         <Link href="/register">
-                            <Button size="lg" className="text-base px-8 hover:scale-105 transition-transform">
+                            <Button size="lg" className="w-full sm:w-auto text-base px-8 bg-gradient-to-r from-primary to-purple-500 hover:opacity-90 hover:scale-105 transition-all shadow-lg shadow-primary/25">
                                 เริ่มต้นใช้งาน
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </Link>
                         <Link href="/login">
-                            <Button variant="outline" size="lg" className="text-base px-8 hover:scale-105 transition-transform">
+                            <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8 hover:scale-105 transition-all hover:bg-slate-50">
                                 เข้าสู่ระบบ
                             </Button>
                         </Link>
                     </div>
 
-                    <div className={`mt-16 flex justify-center gap-12 text-center transition-all duration-700 delay-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-                        <div className="group">
-                            <div className="text-3xl font-bold text-slate-900 group-hover:text-primary transition-colors">1,000+</div>
-                            <div className="text-sm text-slate-500 mt-1">ร้านค้า</div>
+                    <div className={`mt-20 flex justify-center gap-8 md:gap-16 text-center transition-all duration-700 delay-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+                        <div className="group cursor-default">
+                            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">1,000+</div>
+                            <div className="text-sm text-slate-500 mt-2">ร้านค้าไว้วางใจ</div>
                         </div>
-                        <div className="group">
-                            <div className="text-3xl font-bold text-slate-900 group-hover:text-primary transition-colors">50K+</div>
-                            <div className="text-sm text-slate-500 mt-1">รายการขาย/เดือน</div>
+                        <div className="group cursor-default">
+                            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">50K+</div>
+                            <div className="text-sm text-slate-500 mt-2">รายการขาย/เดือน</div>
                         </div>
-                        <div className="group">
-                            <div className="text-3xl font-bold text-slate-900 group-hover:text-primary transition-colors">99.9%</div>
-                            <div className="text-sm text-slate-500 mt-1">Uptime</div>
+                        <div className="group cursor-default">
+                            <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">99.9%</div>
+                            <div className="text-sm text-slate-500 mt-2">Uptime</div>
                         </div>
                     </div>
                 </div>

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Loader2, Save, Palette } from "lucide-react";
+import { Loader2, Save, Palette, Type } from "lucide-react";
 
 interface ThemeSettings {
     site_icon: string;
@@ -14,7 +15,15 @@ interface ThemeSettings {
     site_background: string;
     primary_color: string;
     secondary_color: string;
+    site_font: string;
 }
+
+const FONT_OPTIONS = [
+    { value: "noto_sans_thai", label: "Noto Sans Thai", description: "ฟอนต์ปัจจุบัน (Google)", fontFamily: "'Noto Sans Thai', sans-serif" },
+    { value: "prompt", label: "Prompt", description: "ฟอนต์ทันสมัย ดูสะอาดตา", fontFamily: "'Prompt', sans-serif" },
+    { value: "pridi", label: "Pridi", description: "ฟอนต์คลาสสิก หรูหรา", fontFamily: "'Pridi', serif" },
+    { value: "kanit", label: "Kanit", description: "ฟอนต์ยอดนิยม อ่านง่าย", fontFamily: "'Kanit', sans-serif" },
+];
 
 export default function ThemeSettingsPage() {
     const [settings, setSettings] = useState<ThemeSettings>({
@@ -23,6 +32,7 @@ export default function ThemeSettingsPage() {
         site_background: "",
         primary_color: "#ea580c",
         secondary_color: "#8b5cf6",
+        site_font: "noto_sans_thai",
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -42,6 +52,7 @@ export default function ThemeSettingsPage() {
                     site_background: data.site_background || "",
                     primary_color: data.primary_color || "#ea580c",
                     secondary_color: data.secondary_color || "#8b5cf6",
+                    site_font: data.site_font || "noto_sans_thai",
                 });
             }
         } catch (error) {
@@ -74,6 +85,9 @@ export default function ThemeSettingsPage() {
             setSaving(false);
         }
     };
+
+    const selectedFont = FONT_OPTIONS.find(f => f.value === settings.site_font) || FONT_OPTIONS[0];
+
     if (loading) {
         return null;
     }
@@ -136,6 +150,70 @@ export default function ThemeSettingsPage() {
                                         <span className="relative z-10 font-bold text-lg">Preview Content</span>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Font Settings */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Type className="h-5 w-5" />
+                            ฟอนต์
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <RadioGroup
+                            value={settings.site_font}
+                            onValueChange={(value) => setSettings({ ...settings, site_font: value })}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                        >
+                            {FONT_OPTIONS.map((font) => (
+                                <div key={font.value} className="relative">
+                                    <RadioGroupItem
+                                        value={font.value}
+                                        id={font.value}
+                                        className="peer sr-only"
+                                    />
+                                    <Label
+                                        htmlFor={font.value}
+                                        className="flex flex-col gap-2 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold">{font.label}</span>
+                                            {settings.site_font === font.value && (
+                                                <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">ใช้อยู่</span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{font.description}</p>
+                                        <div
+                                            className="mt-2 p-3 bg-slate-100 rounded-md text-center"
+                                            style={{ fontFamily: font.fontFamily }}
+                                        >
+                                            <p className="text-lg">สวัสดีครับ ยินดีต้อนรับ</p>
+                                            <p className="text-sm text-muted-foreground">Hello, Welcome!</p>
+                                        </div>
+                                    </Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+
+                        {/* Live Preview */}
+                        <div className="mt-6 p-4 border rounded-lg bg-slate-50">
+                            <Label className="text-sm text-muted-foreground mb-3 block">ตัวอย่างการแสดงผล (Preview)</Label>
+                            <div
+                                className="space-y-2"
+                                style={{ fontFamily: selectedFont.fontFamily }}
+                            >
+                                <h2 className="text-2xl font-bold">หัวข้อตัวอย่าง - Sample Heading</h2>
+                                <p className="text-base">
+                                    นี่คือตัวอย่างข้อความที่จะแสดงผลด้วยฟอนต์ {selectedFont.label}
+                                    สามารถดูได้ว่าฟอนต์นี้อ่านง่ายหรือไม่
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    ราคา ฿1,234.00 | จำนวน 10 ชิ้น | สั่งซื้อเลย
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -225,3 +303,4 @@ export default function ThemeSettingsPage() {
         </div>
     );
 }
+
