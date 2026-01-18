@@ -98,7 +98,7 @@ export default function TopupAngpaoPage() {
                 ย้อนกลับ
             </Link>
 
-            <Card className="border shadow-lg bg-white backdrop-blur-sm">
+            <Card className="border shadow-lg bg-card text-card-foreground backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <div className="mx-auto w-16 h-16  rounded-full flex items-center justify-center mb-4">
                         <Gift className="w-8 h-8 text-primary " />

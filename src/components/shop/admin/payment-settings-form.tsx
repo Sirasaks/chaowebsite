@@ -155,7 +155,7 @@ export function PaymentSettingsForm() {
                                     <SelectItem key={bank.code} value={bank.name}>
                                         <div className="flex items-center gap-2">
                                             <div
-                                                className="w-6 h-6 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-white"
+                                                className="w-6 h-6 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-card text-card-foreground"
                                             >
                                                 <img
                                                     src={bank.logo}

@@ -7,7 +7,7 @@ import { TestimonialsSection } from "./components/TestimonialsSection";
 // ✅ Server Component (Static by default in App Router)
 export default function MasterPage() {
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-card text-card-foreground">
             {/* Hero Section - Client Side Animation */}
             <HeroSection />
 

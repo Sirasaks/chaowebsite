@@ -130,7 +130,7 @@ export default function TopupSlipPage() {
                 ย้อนกลับ
             </Link>
 
-            <Card className="border shadow-lg bg-white backdrop-blur-sm">
+            <Card className="border shadow-lg bg-card text-card-foreground backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         เติมเงินผ่านธนาคาร
@@ -140,7 +140,7 @@ export default function TopupSlipPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="bg-white border border-border rounded-lg p-4 shadow-sm space-y-3">
+                    <div className="bg-card text-card-foreground border border-border rounded-lg p-4 shadow-sm space-y-3">
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">ธนาคาร</span>
                             <span className="font-medium flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function TopupSlipPage() {
                                         return (
                                             <>
                                                 {bank ? (
-                                                    <div className="h-6 w-6 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-white">
+                                                    <div className="h-6 w-6 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-card text-card-foreground">
                                                         <img src={bank.logo} alt={bank.name} className="w-full h-full object-cover" />
                                                     </div>
                                                 ) : (

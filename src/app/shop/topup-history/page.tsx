@@ -113,12 +113,12 @@ function TopupHistoryContent() {
                         placeholder="ค้นหาเลขที่รายการ..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8 bg-white"
+                        className="pl-8 bg-card text-card-foreground"
                     />
                 </div>
             </div>
 
-            <div className="rounded-md border overflow-x-auto bg-white">
+            <div className="rounded-md border overflow-x-auto bg-card text-card-foreground">
                 <Table>
                     <TableHeader>
                         <TableRow>

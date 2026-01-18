@@ -62,7 +62,7 @@ export default function Navbar({ logo, title }: NavbarProps) {
         }
     }
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white p-2 text-foreground">
+        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-card text-card-foreground p-2">
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex justify-between items-center h-12">
 

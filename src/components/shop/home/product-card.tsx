@@ -52,7 +52,7 @@ export function ProductCard({ product, user }: ProductCardProps) {
 
     return (
         <div>
-            <div className="rounded-lg p-2.5 md:p-3 group hover:-translate-y-1 transition-all flex flex-col shadow-sm hover:shadow-lg bg-white backdrop-blur-sm border hover:border-primary">
+            <div className="rounded-lg p-2.5 md:p-3 group hover:-translate-y-1 transition-all flex flex-col shadow-sm hover:shadow-lg bg-card text-card-foreground backdrop-blur-sm border hover:border-primary">
                 <Link href={`/products/${product.slug}`} className="grow">
                     <div className="w-full aspect-square mb-2 overflow-hidden rounded-lg relative bg-slate-100">
                         <img
@@ -70,7 +70,7 @@ export function ProductCard({ product, user }: ProductCardProps) {
                         />
                         {isOutOfStock && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-                                <span className="bg-white/90 text-slate-700 px-3 py-1 rounded-full text-sm font-medium">
+                                <span className="bg-card/90 text-card-foreground px-3 py-1 rounded-full text-sm font-medium">
                                     สินค้าหมด
                                 </span>
                             </div>

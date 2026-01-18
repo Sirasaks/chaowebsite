@@ -70,7 +70,7 @@ export function MasterHistoryClient({ initialShops }: MasterHistoryClientProps) 
                 </div>
 
                 {shops.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border">
+                    <div className="text-center py-20 bg-card text-card-foreground rounded-2xl border">
                         <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-6">
                             <Store className="h-10 w-10 text-slate-400" />
                         </div>
@@ -91,7 +91,7 @@ export function MasterHistoryClient({ initialShops }: MasterHistoryClientProps) 
                             return (
                                 <Card
                                     key={shop.id}
-                                    className={`bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${isExpired ? "opacity-75" : ""}`}
+                                    className={`bg-card text-card-foreground border-0 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${isExpired ? "opacity-75" : ""}`}
                                     style={{ animationDelay: `${index * 100}ms` }}
                                 >
                                     <CardContent className="p-0">

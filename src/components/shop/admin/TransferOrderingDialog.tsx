@@ -132,7 +132,7 @@ export function TransferOrderingDialog({ title, items, onSave, trigger, open: co
                         <div className="flex-1 overflow-y-auto p-2 space-y-2">
                             {filteredAvailable.map(item => (
                                 <div key={item.id}
-                                    className="flex items-center justify-between p-2 bg-white border rounded hover:bg-slate-50 cursor-pointer group"
+                                    className="flex items-center justify-between p-2 bg-card text-card-foreground border rounded hover:bg-slate-50 cursor-pointer group"
                                     onClick={() => moveToSelected(item)}
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden">
@@ -169,7 +169,7 @@ export function TransferOrderingDialog({ title, items, onSave, trigger, open: co
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-primary/10">
                             {selectedItems.map((item, index) => (
-                                <div key={item.id} className="flex items-center gap-2 p-2 bg-white border border-primary/20 rounded shadow-sm">
+                                <div key={item.id} className="flex items-center gap-2 p-2 bg-card text-card-foreground border border-primary/20 rounded shadow-sm">
                                     <div className="flex flex-col gap-1">
                                         <Button
                                             size="icon"

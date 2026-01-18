@@ -84,7 +84,7 @@ export function ReorderDialog({ title, items, onSave, trigger, open: controlledO
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-2 border rounded-md bg-slate-50">
                     {orderedItems.map((item, index) => (
-                        <div key={item.id} className="flex items-center gap-2 p-2 bg-white border rounded shadow-sm">
+                        <div key={item.id} className="flex items-center gap-2 p-2 bg-card text-card-foreground border rounded shadow-sm">
                             <div className="text-slate-400">
                                 <GripVertical className="h-4 w-4" />
                             </div>

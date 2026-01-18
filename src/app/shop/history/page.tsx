@@ -174,12 +174,12 @@ function HistoryContent() {
                         placeholder="ค้นหาชื่อสินค้า..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-8 bg-white"
+                        className="pl-8 bg-card text-card-foreground"
                     />
                 </div>
             </div>
 
-            <div className="rounded-md border overflow-x-auto bg-white">
+            <div className="rounded-md border overflow-x-auto bg-card text-card-foreground">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -270,7 +270,7 @@ function HistoryContent() {
                                                             <DialogTitle>ข้อมูลสินค้า: {order.product_name}</DialogTitle>
                                                         </div>
                                                     </DialogHeader>
-                                                    <div className="p-4 rounded-md border mt-4 bg-white">
+                                                    <div className="p-4 rounded-md border mt-4 bg-card text-card-foreground">
                                                         {order.product_type === 'api' ? (
                                                             <div
                                                                 className="text-sm [&>h4]:font-bold [&>h4]:text-lg [&>h4]:mb-2 [&>p]:mb-2"

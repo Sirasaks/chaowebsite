@@ -129,7 +129,7 @@ const CategoryProductsReorder = ({
                 ) : (
                     <div className="flex-1 overflow-y-auto p-2 space-y-2 border rounded-md bg-slate-50">
                         {products.map((item, index) => (
-                            <div key={item.id} className="flex items-center gap-2 p-2 bg-white border rounded shadow-sm">
+                            <div key={item.id} className="flex items-center gap-2 p-2 bg-card text-card-foreground border rounded shadow-sm">
                                 <div className="text-slate-400 font-bold w-6 text-center">{index + 1}</div>
 
                                 {item.image ? (
@@ -371,7 +371,7 @@ export default function AdminCategoriesPage() {
             {loading ? (
                 <CategoryTableSkeleton />
             ) : (
-                <div className="rounded-md border bg-white">
+                <div className="rounded-md border bg-card text-card-foreground">
                     <Table>
                         <TableHeader>
                             <TableRow>
