@@ -1,5 +1,6 @@
 import pool from "./db";
 import { RowDataPacket } from "mysql2";
+import { unstable_cache } from "next/cache";
 
 export interface Product {
     id: number;
@@ -11,18 +12,16 @@ export interface Product {
     created_at: Date;
     slug: string;
     type: 'account' | 'form' | 'api';
-    // category_id removed as we use Many-to-Many
-    stock?: number; // Stock is now optional/virtual
-    is_active?: boolean | number; // Database returns 0/1 as number, but can be boolean
+    stock?: number;
+    is_active?: boolean | number;
     sold?: number;
     no_agent_discount?: boolean | number;
     category_name?: string;
     category_slug?: string;
 }
 
-export async function getProductsByCategoryId(categoryId: number, shopId: number): Promise<Product[]> {
+async function fetchProductsByCategoryId(categoryId: number, shopId: number): Promise<Product[]> {
     try {
-        // Optimized: Select specific columns instead of p.*
         const [rows] = await pool.query<RowDataPacket[]>(
             `SELECT p.id, p.name, p.price, p.description, p.image, p.account, p.created_at, p.slug, p.type, 
              p.is_active, p.display_order,
@@ -37,21 +36,18 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
             [categoryId, shopId]
         );
 
-        // Calculate stock for account type products
         return rows.map(row => {
             let stock = 0;
             if (row.type === 'account' && row.account) {
                 stock = row.account.split('\n').filter((line: string) => line.trim() !== '').length;
             }
-            // Ensure price is a number
             return {
                 id: row.id,
                 name: row.name,
                 price: Number(row.price),
                 description: row.description,
                 image: row.image,
-                account: row.account, // We might need this for stock calc, but frontend might not need the full list if it's huge. 
-                // However, the interface requires it.
+                account: row.account,
                 created_at: row.created_at,
                 slug: row.slug,
                 type: row.type,
@@ -59,7 +55,6 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
                 is_active: Boolean(row.is_active),
                 sold: Number(row.sold),
                 no_agent_discount: row.no_agent_discount,
-                // category_name is not in this query, but that's fine as per interface optionality
             } as Product;
         });
     } catch (error) {
@@ -68,7 +63,7 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
     }
 }
 
-export async function getProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
+async function fetchProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
     try {
         let query = `
             SELECT p.id, p.name, p.price, p.description, p.image, p.account, p.created_at, p.slug, p.type, 
@@ -92,8 +87,6 @@ export async function getProductBySlug(slug: string, shopId?: number): Promise<P
         }
 
         const row = rows[0];
-
-        // Calculate stock if needed (single product view might need specific stock count)
         let stock = 0;
         if (row.type === 'account' && row.account) {
             stock = row.account.split('\n').filter((line: string) => line.trim() !== '').length;
@@ -111,7 +104,7 @@ export async function getProductBySlug(slug: string, shopId?: number): Promise<P
             type: row.type,
             stock: stock,
             is_active: Boolean(row.is_active),
-            sold: 0, // Individual product fetch might not need total sold unless specified, kept 0 for now as per original
+            sold: 0,
             no_agent_discount: row.no_agent_discount,
             category_name: row.category_name,
             category_slug: row.category_slug
@@ -121,5 +114,20 @@ export async function getProductBySlug(slug: string, shopId?: number): Promise<P
         return null;
     }
 }
+
+// --- Cached Exports ---
+
+export const getProductsByCategoryId = unstable_cache(
+    async (categoryId: number, shopId: number) => fetchProductsByCategoryId(categoryId, shopId),
+    ['category-products'],
+    { revalidate: 60, tags: ['products'] }
+);
+
+export const getProductBySlug = unstable_cache(
+    async (slug: string, shopId?: number) => fetchProductBySlug(slug, shopId),
+    ['product-detail'],
+    { revalidate: 60, tags: ['products'] }
+);
+
 
 

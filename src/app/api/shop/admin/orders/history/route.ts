@@ -100,6 +100,10 @@ export async function GET(request: Request) {
                     totalPages,
                     totalItems
                 }
+            }, {
+                headers: {
+                    'Cache-Control': 'no-store, max-age=0'
+                }
             });
         } finally {
             connection.release();

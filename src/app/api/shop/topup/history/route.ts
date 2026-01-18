@@ -75,6 +75,10 @@ export async function GET(request: Request) {
                 totalItems,
                 totalPages,
             }
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0'
+            }
         });
 
     } catch (error: any) {

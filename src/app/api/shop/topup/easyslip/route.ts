@@ -71,14 +71,10 @@ export async function POST(request: Request) {
             EASYSLIP_ACCESS_TOKEN = isEncrypted(storedToken) ? decrypt(storedToken) : storedToken;
         }
 
-        // Fallback to environment variable
+        // Fallback: ไม่อนุญาต - แต่ละร้านต้องตั้งค่า token ของตัวเอง
         if (!EASYSLIP_ACCESS_TOKEN) {
-            EASYSLIP_ACCESS_TOKEN = process.env.EASYSLIP_ACCESS_TOKEN;
-        }
-
-        if (!EASYSLIP_ACCESS_TOKEN) {
-            console.error("EasySlip configuration missing");
-            return NextResponse.json({ error: "System configuration error" }, { status: 500 });
+            console.error(`EasySlip token not configured for shop ${shopId}`);
+            return NextResponse.json({ error: "ร้านค้ายังไม่ได้ตั้งค่า EasySlip กรุณาติดต่อผู้ดูแลระบบ" }, { status: 500 });
         }
 
         // 4. Send to EasySlip API

@@ -167,6 +167,11 @@
     animation: fadeInUp 0.3s ease-out;
   }
 
+  .animate-appear {
+    opacity: 0;
+    animation: fadeInUp 0.7s ease-out forwards;
+  }
+  
   .animate-coin-spin {
     animation: coin-spin 0.8s linear;
   }

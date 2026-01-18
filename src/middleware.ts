@@ -9,12 +9,6 @@ export async function middleware(req: NextRequest) {
     const hostname = req.headers.get("host") || "";
     const pathname = url.pathname;
 
-    console.log("Middleware Debug:", {
-        hostHeader: req.headers.get("host"),
-        nextUrlHostname: req.nextUrl.hostname,
-        pathname
-    });
-
     // Define allowed domains (Adjust for production)
     const rootDomain = "chaoweb.site"; // Change this to your real domain
     const isLocal = hostname.includes("localhost");
@@ -37,15 +31,14 @@ export async function middleware(req: NextRequest) {
         subdomain = hostname.replace(`.${rootDomain}`, "");
     }
 
-    // Allow spoofing in development for testing
-    if (process.env.NODE_ENV === 'development') {
+    // ✅ Allow spoofing ONLY in development AND on localhost
+    const isDevelopment = process.env.NODE_ENV === 'development' && isLocal;
+    if (isDevelopment) {
         const spoofedSubdomain = req.headers.get('x-shop-subdomain');
         if (spoofedSubdomain) {
             subdomain = spoofedSubdomain;
         }
     }
-
-    console.log("Extracted Subdomain:", subdomain);
 
     // Determine if it's a Shop request or Master request
     const isShop = subdomain && subdomain !== "www";

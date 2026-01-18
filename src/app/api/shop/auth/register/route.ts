@@ -8,11 +8,13 @@ import { getJwtSecret } from "@/lib/env";
 import axios from "axios";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
+import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
+import { logSecurityEvent, logRateLimitExceeded } from "@/lib/security-logger";
 
 const registerSchema = z.object({
   username: z.string().min(3),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
   captchaToken: z.string().optional(),
 });
 
@@ -55,6 +57,7 @@ export async function POST(req: Request) {
     const { success } = rateLimit(`shop-register:${shopId}:${ip}`, { limit: 5, windowMs: 60000 });
 
     if (!success) {
+      logRateLimitExceeded(req, '/api/shop/auth/register', shopId);
       return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอสักครู่" }, { status: 429 });
     }
 
@@ -64,6 +67,7 @@ export async function POST(req: Request) {
     // Verify Turnstile
     const isCaptchaValid = await verifyTurnstile(captchaToken);
     if (!isCaptchaValid) {
+      logSecurityEvent('REGISTER_FAILED', { ip, username, reason: 'captcha_failed', shopId });
       return NextResponse.json({ error: "การยืนยันตัวตนล้มเหลว (Turnstile Failed)" }, { status: 400 });
     }
 
@@ -73,6 +77,9 @@ export async function POST(req: Request) {
       [username, email, shopId]
     );
     if ((existing as any[]).length > 0) {
+      // Don't log reason as duplicate if you want to be generic, but here we are explicit to user so we know.
+      // For security log, it's fine.
+      logSecurityEvent('REGISTER_FAILED', { ip, username, reason: 'duplicate_user', shopId });
       return NextResponse.json({ error: "Username หรือ Email ถูกใช้แล้วในร้านค้านี้" }, { status: 400 });
     }
 
@@ -82,30 +89,31 @@ export async function POST(req: Request) {
       [shopId, username, email, hashedPassword, "user"]
     );
 
-    const token = jwt.sign(
-      { userId: (result as any).insertId, role: 'user', tokenType: 'shop' },
-      getJwtSecret(),
-      { expiresIn: "7d" }
+    const userId = (result as any).insertId;
+
+    // ✅ ใช้ Token Service (Token Rotation)
+    const { accessToken, refreshToken } = await generateTokenPair(
+      userId,
+      "user",
+      "shop",
+      shopId
     );
 
-    const cookie = serialize("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-    });
+    // Log Success
+    logSecurityEvent('REGISTER_SUCCESS', { ip, userId, username, shopId });
 
     const res = NextResponse.json({
       message: "สมัครสมาชิกสำเร็จ",
       user: {
-        id: (result as any).insertId,
+        id: userId,
         username,
         role: "user",
         shop_id: shopId
       },
     });
-    res.headers.set("Set-Cookie", cookie);
+
+    res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
+    res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
     return res;
 
   } catch (err: any) {

@@ -1,40 +1,14 @@
-"use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, CreditCard } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { getMasterPaymentSettings } from "@/lib/master-data-service";
 
-export default function MasterTopupPage() {
-    const [settings, setSettings] = useState({
-        bank_transfer_enabled: "true",
-        truemoney_angpao_enabled: "true",
-    });
-    const [loading, setLoading] = useState(true);
+export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 minutes
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await fetch("/api/master/settings/payment");
-                if (res.ok) {
-                    const data = await res.json();
-                    setSettings({
-                        bank_transfer_enabled: data.bank_transfer_enabled ?? "true",
-                        truemoney_angpao_enabled: data.truemoney_angpao_enabled ?? "true",
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching payment settings:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSettings();
-    }, []);
-
-    if (loading) {
-        return null;
-    }
+export default async function MasterTopupPage() {
+    const settings = await getMasterPaymentSettings();
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-4xl">
@@ -43,7 +17,7 @@ export default function MasterTopupPage() {
             </h1>
 
             <div className="grid md:grid-cols-2 gap-6">
-                {settings.truemoney_angpao_enabled === "true" && (
+                {settings.truemoney_angpao_enabled && (
                     <Link href="/topup/angpao" className="group">
                         <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-red-200 cursor-pointer bg-gradient-to-br from-red-50 to-white">
                             <CardHeader className="text-center pb-2">
@@ -67,7 +41,7 @@ export default function MasterTopupPage() {
                     </Link>
                 )}
 
-                {settings.bank_transfer_enabled === "true" && (
+                {settings.bank_transfer_enabled && (
                     <Link href="/topup/slip" className="group">
                         <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200 cursor-pointer bg-gradient-to-br from-slate-50 to-white">
                             <CardHeader className="text-center pb-2">

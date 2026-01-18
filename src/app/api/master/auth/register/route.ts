@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
-import { getJwtSecret } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import axios from "axios";
+import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
+import { logSecurityEvent } from "@/lib/security-logger";
+
+// ✅ Password Policy: ต้องมีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก ตัวเลข และอักขระพิเศษ
+const passwordSchema = z.string()
+    .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
+    .regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว")
+    .regex(/[a-z]/, "ต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว")
+    .regex(/[0-9]/, "ต้องมีตัวเลขอย่างน้อย 1 ตัว");
 
 const registerSchema = z.object({
     username: z.string().min(3),
     email: z.string().email(),
-    password: z.string().min(8),
+    password: passwordSchema,
     captchaToken: z.string().optional(),
 });
 
@@ -78,26 +85,22 @@ export async function POST(req: Request) {
         );
         const userId = (userResult as any).insertId;
 
-        // 3. Generate Token with scope
-        const token = jwt.sign(
-            { userId: userId, role: "user", tokenType: 'master' },
-            getJwtSecret(),
-            { expiresIn: "7d" }
+        // 3. ✅ Token Rotation: Access Token (15m) + Refresh Token (7d)
+        const { accessToken, refreshToken } = await generateTokenPair(
+            userId,
+            "user",
+            "master"
         );
 
-        const cookie = serialize("token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60,
-        });
+        logSecurityEvent('REGISTER_SUCCESS', { ip, userId, username });
 
         const res = NextResponse.json({
             message: "สมัครสมาชิกสำเร็จ",
             user: { id: userId, username, role: "user" },
         });
-        res.headers.set("Set-Cookie", cookie);
+
+        res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
+        res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
         return res;
 
     } catch (err: any) {

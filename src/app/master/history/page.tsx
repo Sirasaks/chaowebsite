@@ -1,262 +1,75 @@
-"use client"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import jwt from "jsonwebtoken"
+import pool from "@/lib/db"
+import { getJwtSecret } from "@/lib/env"
+import { MasterHistoryClient } from "./components/MasterHistoryClient"
 
-import { useEffect, useState } from "react"
-import { useAuth } from "@/context/AuthContext"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-    ExternalLink,
-    Store,
-    Calendar,
-    User,
-    Key,
-    Loader2,
-    Clock,
-    Globe,
-    Copy,
-    Check,
-    AlertCircle
-} from "lucide-react"
-import Link from "next/link"
+// Force dynamic since we read cookies
+export const dynamic = 'force-dynamic'
 
-interface Shop {
-    id: number
-    name: string
-    subdomain: string
-    expire_date: string
-    created_at: string
-    order_data: string | null
+async function getHistory() {
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+
+    if (!token) return null
+
+    try {
+        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; role?: string; tokenType?: string }
+
+        // Verify this is a master token
+        if (decoded.tokenType && decoded.tokenType !== 'master') {
+            return null
+        }
+
+        const [rows] = await pool.query(
+            `SELECT 
+                s.id, 
+                s.name, 
+                s.subdomain, 
+                s.expire_date, 
+                s.created_at,
+                COALESCE(mo.data, o.data) as order_data
+            FROM shops s
+            LEFT JOIN (
+                SELECT shop_id, data,
+                       ROW_NUMBER() OVER (PARTITION BY shop_id ORDER BY id ASC) as rn
+                FROM master_orders 
+                WHERE data LIKE '%"username":%'
+            ) mo ON mo.shop_id = s.id AND mo.rn = 1
+            LEFT JOIN (
+                SELECT shop_id, data,
+                       ROW_NUMBER() OVER (PARTITION BY shop_id ORDER BY id ASC) as rn  
+                FROM orders
+                WHERE data LIKE '%"username":%'
+            ) o ON o.shop_id = s.id AND o.rn = 1 AND mo.data IS NULL
+            WHERE s.owner_id = ?
+            ORDER BY s.created_at DESC`,
+            [decoded.userId]
+        )
+
+        // Serialize data (dates need to be strings for consistency if passing to client, 
+        // typically mysql2 returns Date objects for datetime columns, but JSON.stringify/Next.js might handle it or we should be explicit)
+        // Ideally we map it to match the interface of the client component
+        return (rows as any[]).map(row => ({
+            ...row,
+            created_at: row.created_at.toISOString(),
+            expire_date: row.expire_date.toISOString(), // Assuming these are Date objects from DB
+        }))
+
+    } catch (err) {
+        console.error("Error fetching history:", err)
+        return null
+    }
 }
 
-export default function MasterHistoryPage() {
-    const { user, loading: authLoading } = useAuth()
-    const [shops, setShops] = useState<Shop[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [copiedId, setCopiedId] = useState<number | null>(null)
+export default async function MasterHistoryPage() {
+    const shops = await getHistory()
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            if (!user) return
-
-            try {
-                const res = await fetch("/api/master/history")
-                if (!res.ok) throw new Error("Failed to fetch history")
-                const data = await res.json()
-                setShops(data.shops)
-            } catch (err) {
-                console.error(err)
-                setError("ไม่สามารถโหลดข้อมูลประวัติการสั่งซื้อได้")
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        if (!authLoading) {
-            if (user) {
-                fetchHistory()
-            } else {
-                setLoading(false)
-            }
-        }
-    }, [user, authLoading])
-
-    const copyToClipboard = (text: string, id: number) => {
-        navigator.clipboard.writeText(text)
-        setCopiedId(id)
-        setTimeout(() => setCopiedId(null), 2000)
+    if (shops === null) {
+        redirect("/login")
     }
 
-    const getCredentials = (orderData: string | null) => {
-        if (!orderData) return { username: "-", password: "-" }
-        try {
-            const parsed = JSON.parse(orderData)
-            return {
-                username: parsed.username || "-",
-                password: parsed.password || "-"
-            }
-        } catch (e) {
-            return { username: "-", password: "-" }
-        }
-    }
-
-    const getDaysRemaining = (expireDate: string) => {
-        const now = new Date()
-        const expire = new Date(expireDate)
-        const diff = expire.getTime() - now.getTime()
-        return Math.ceil(diff / (1000 * 60 * 60 * 24))
-    }
-
-    if (authLoading || (loading && user)) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
-
-    if (!user) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                        <User className="h-8 w-8 text-slate-400" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-slate-900">กรุณาเข้าสู่ระบบ</h1>
-                    <p className="text-slate-500 mt-2">คุณต้องเข้าสู่ระบบเพื่อดูประวัติการสั่งซื้อ</p>
-                    <Button asChild className="mt-6">
-                        <Link href="/login">เข้าสู่ระบบ</Link>
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div className="min-h-screen bg-slate-50">
-            <div className="max-w-6xl mx-auto py-12 px-6">
-                {/* Header */}
-                <div className="mb-10">
-                    <h1 className="text-3xl font-bold text-slate-900">ร้านค้าของฉัน</h1>
-                    <p className="text-slate-500 mt-2">รายการร้านค้าที่คุณเปิดใช้งาน</p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-3">
-                        <AlertCircle className="h-5 w-5" />
-                        {error}
-                    </div>
-                )}
-
-                {!loading && shops.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-2xl border">
-                        <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-6">
-                            <Store className="h-10 w-10 text-slate-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-slate-900">ยังไม่มีร้านค้า</h3>
-                        <p className="text-slate-500 mt-2">คุณยังไม่ได้เปิดร้านค้าใดๆ</p>
-                        <Button asChild className="mt-6">
-                            <Link href="/shop">เปิดร้านค้าเลย</Link>
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {shops.map((shop, index) => {
-                            const { username, password } = getCredentials(shop.order_data)
-                            const daysRemaining = getDaysRemaining(shop.expire_date)
-                            const isExpired = daysRemaining <= 0
-                            const isWarning = daysRemaining > 0 && daysRemaining <= 7
-
-                            return (
-                                <Card
-                                    key={shop.id}
-                                    className={`bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden ${isExpired ? "opacity-75" : ""}`}
-                                    style={{ animationDelay: `${index * 100}ms` }}
-                                >
-                                    <CardContent className="p-0">
-                                        <div className="flex flex-col lg:flex-row">
-                                            {/* Left Section - Shop Info */}
-                                            <div className="flex-1 p-6">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                                                            <Store className="h-6 w-6 text-primary" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-lg font-semibold text-slate-900">{shop.name}</h3>
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <Globe className="h-3.5 w-3.5 text-slate-400" />
-                                                                <span className="text-sm text-slate-500">{shop.subdomain}.chaoweb.site</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <Badge
-                                                        variant={isExpired ? "destructive" : isWarning ? "warning" : "success"}
-                                                        className="shrink-0"
-                                                    >
-                                                        {isExpired ? "หมดอายุ" : isWarning ? `เหลือ ${daysRemaining} วัน` : "Active"}
-                                                    </Badge>
-                                                </div>
-
-                                                {/* Credentials */}
-                                                <div className="grid grid-cols-2 gap-3 mb-4">
-                                                    <div className="bg-slate-50 rounded-lg p-3">
-                                                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                                                            <User className="h-3 w-3" />
-                                                            Username
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-mono text-sm font-medium">{username}</span>
-                                                            <button
-                                                                onClick={() => copyToClipboard(username, shop.id * 10 + 1)}
-                                                                className="p-1 hover:bg-slate-200 rounded transition-colors"
-                                                            >
-                                                                {copiedId === shop.id * 10 + 1 ? (
-                                                                    <Check className="h-3.5 w-3.5 text-green-500" />
-                                                                ) : (
-                                                                    <Copy className="h-3.5 w-3.5 text-slate-400" />
-                                                                )}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="bg-slate-50 rounded-lg p-3">
-                                                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                                                            <Key className="h-3 w-3" />
-                                                            Password
-                                                        </div>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-mono text-sm font-medium">{password}</span>
-                                                            <button
-                                                                onClick={() => copyToClipboard(password, shop.id * 10 + 2)}
-                                                                className="p-1 hover:bg-slate-200 rounded transition-colors"
-                                                            >
-                                                                {copiedId === shop.id * 10 + 2 ? (
-                                                                    <Check className="h-3.5 w-3.5 text-green-500" />
-                                                                ) : (
-                                                                    <Copy className="h-3.5 w-3.5 text-slate-400" />
-                                                                )}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Dates */}
-                                                <div className="flex items-center gap-6 text-xs text-slate-500">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Calendar className="h-3.5 w-3.5" />
-                                                        <span>สร้างเมื่อ {new Date(shop.created_at).toLocaleDateString('th-TH')}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Clock className="h-3.5 w-3.5" />
-                                                        <span>หมดอายุ {new Date(shop.expire_date).toLocaleDateString('th-TH')}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Right Section - Action */}
-                                            <div className="lg:w-48 p-6 lg:border-l bg-slate-50/50 flex items-center justify-center">
-                                                <Button asChild className="w-full" variant={isExpired ? "outline" : "default"}>
-                                                    <a
-                                                        href={process.env.NODE_ENV === 'development'
-                                                            ? `http://${shop.subdomain}.localhost:3000`
-                                                            : `https://${shop.subdomain}.chaoweb.site`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    >
-                                                        <ExternalLink className="h-4 w-4 mr-2" />
-                                                        {isExpired ? "ดูร้านค้า" : "จัดการร้าน"}
-                                                    </a>
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
-        </div>
-    )
+    return <MasterHistoryClient initialShops={shops} />
 }
+

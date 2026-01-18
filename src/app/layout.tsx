@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { getCachedSettings } from "@/lib/settings-cache";
 import { Toaster } from "@/components/ui/sonner";
+import { WebVitals } from "@/components/WebVitals";
 import { headers } from "next/headers";
 import NextTopLoader from 'nextjs-toploader';
 
@@ -134,6 +135,7 @@ export default async function RootLayout({
           shadow={`0 0 10px ${settings.primary_color || "#2299DD"},0 0 5px ${settings.primary_color || "#2299DD"}`}
         />
         <Providers>
+          <WebVitals />
           {children}
           <Toaster position="top-right" />
         </Providers>

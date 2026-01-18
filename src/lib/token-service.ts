@@ -70,11 +70,20 @@ export async function generateTokenPair(
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
 
     // Store refresh token in database
+    // Store refresh token in database
     const table = tokenType === 'master' ? 'master_refresh_tokens' : 'refresh_tokens';
-    await pool.query<ResultSetHeader>(
-        `INSERT INTO ${table} (user_id, token_hash, expires_at, shop_id) VALUES (?, ?, ?, ?)`,
-        [userId, tokenHash, expiresAt, shopId || null]
-    );
+
+    if (tokenType === 'master') {
+        await pool.query<ResultSetHeader>(
+            `INSERT INTO ${table} (user_id, token_hash, expires_at) VALUES (?, ?, ?)`,
+            [userId, tokenHash, expiresAt]
+        );
+    } else {
+        await pool.query<ResultSetHeader>(
+            `INSERT INTO ${table} (user_id, token_hash, expires_at, shop_id) VALUES (?, ?, ?, ?)`,
+            [userId, tokenHash, expiresAt, shopId || null]
+        );
+    }
 
     return { accessToken, refreshToken };
 }

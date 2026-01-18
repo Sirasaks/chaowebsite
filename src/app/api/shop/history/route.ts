@@ -76,6 +76,10 @@ export async function GET(request: Request) {
                 total,
                 totalPages
             }
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0'
+            }
         });
     } catch (error) {
         console.error("History Error:", error);

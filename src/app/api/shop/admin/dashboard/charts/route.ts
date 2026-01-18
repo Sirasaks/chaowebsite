@@ -153,8 +153,11 @@ export async function GET(request: Request) {
 
             return NextResponse.json({
                 topup: formatData(topupData, 'total'),
-                sales: formatData(salesData, 'total'),
                 users: formatData(userData, 'count')
+            }, {
+                headers: {
+                    'Cache-Control': 'private, max-age=60, stale-while-revalidate=300'
+                }
             });
 
         } finally {
