@@ -56,10 +56,13 @@ export function ProductCard({ product, user }: ProductCardProps) {
                 <Link href={`/products/${product.slug}`} className="grow">
                     <div className="w-full aspect-square mb-2 overflow-hidden rounded-lg relative bg-slate-100">
                         <img
+                            ref={imgRef}
                             src={product.image || "/placeholder-image.png"}
                             alt={product.name}
+                            onLoad={() => setIsImageLoading(false)}
                             className={cn(
-                                "w-full h-full aspect-square rounded-lg object-cover transition-all duration-300",
+                                "rounded-lg w-full h-full object-cover transition-all duration-300",
+                                isImageLoading ? "opacity-0" : "opacity-100",
                                 isOutOfStock
                                     ? "grayscale"
                                     : "group-hover:scale-105"

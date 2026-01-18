@@ -15,6 +15,12 @@ const pool = globalThis.mysqlPool || mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // Performance optimizations
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000, // 10 seconds
+  connectTimeout: 10000, // 10 seconds
+  maxIdle: 5, // Max idle connections
+  idleTimeout: 60000, // 60 seconds
 });
 
 if (process.env.NODE_ENV !== "production") {

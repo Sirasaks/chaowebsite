@@ -9,9 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@fortawesome/react-fontawesome": "^3.1.1",
     "@marsidev/react-turnstile": "^1.4.1",
     "@prakrit_m/tmn-voucher": "^1.0.5",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -53,7 +50,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/aos": "^3.0.7",
     "@types/bcrypt": "^6.0.0",
     "@types/dompurify": "^3.0.5",
     "@types/jsonwebtoken": "^9.0.10",

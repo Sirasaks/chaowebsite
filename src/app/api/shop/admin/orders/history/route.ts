@@ -37,10 +37,35 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
+        const page = Number(searchParams.get("page")) || 1;
+        const limit = Number(searchParams.get("limit")) || 10;
+        const offset = (page - 1) * limit;
 
         const connection = await pool.getConnection();
 
         try {
+            // Base WHERE clause
+            let whereClause = "WHERE o.shop_id = ?";
+            const queryParams: any[] = [shopId];
+
+            if (search) {
+                whereClause += ` AND (u.username LIKE ? OR o.id LIKE ? OR p.name LIKE ?)`;
+                queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            }
+
+            // 1. Count Total
+            const [countResult] = await connection.query<RowDataPacket[]>(
+                `SELECT COUNT(*) as total 
+                 FROM orders o
+                 JOIN users u ON o.user_id = u.id
+                 JOIN products p ON o.product_id = p.id
+                 ${whereClause}`,
+                queryParams
+            );
+            const totalItems = countResult[0].total;
+            const totalPages = Math.ceil(totalItems / limit);
+
+            // 2. Fetch Data
             let query = `
                 SELECT 
                     o.id,
@@ -57,21 +82,25 @@ export async function GET(request: Request) {
                 FROM orders o
                 JOIN users u ON o.user_id = u.id
                 JOIN products p ON o.product_id = p.id
-                WHERE o.shop_id = ?
+                ${whereClause}
+                ORDER BY o.created_at DESC
+                LIMIT ? OFFSET ?
             `;
 
-            const queryParams: any[] = [shopId];
+            // Add limit/offset to params
+            const dataParams = [...queryParams, limit, offset];
 
-            if (search) {
-                query += ` AND (u.username LIKE ? OR o.id LIKE ? OR p.name LIKE ?)`;
-                queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
-            }
+            const [orders] = await connection.query<RowDataPacket[]>(query, dataParams);
 
-            query += ` ORDER BY o.created_at DESC LIMIT 100`; // Limit to 100 for now to avoid overload
-
-            const [orders] = await connection.query<RowDataPacket[]>(query, queryParams);
-
-            return NextResponse.json(orders);
+            return NextResponse.json({
+                data: orders,
+                pagination: {
+                    page,
+                    limit,
+                    totalPages,
+                    totalItems
+                }
+            });
         } finally {
             connection.release();
         }

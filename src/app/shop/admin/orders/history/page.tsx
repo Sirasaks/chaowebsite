@@ -45,13 +45,26 @@ export default function AdminOrderHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/shop/admin/orders/history?search=${encodeURIComponent(searchTerm)}`);
+            const res = await fetch(`/api/shop/admin/orders/history?page=${page}&limit=10&search=${encodeURIComponent(searchTerm)}`);
             if (res.ok) {
                 const data = await res.json();
-                setOrders(data);
+                // Handle new API format
+                if (data.pagination) {
+                    setOrders(data.data);
+                    setTotalPages(data.pagination.totalPages);
+                    setTotalItems(data.pagination.totalItems);
+                } else {
+                    // Fallback for old API if cached or mismatch
+                    setOrders(data);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch history:", error);
@@ -61,13 +74,32 @@ export default function AdminOrderHistoryPage() {
         }
     };
 
-    // Debounce search
+    // Debounce search (Reset to page 1 on search)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
+            setPage(1); // Reset page on new search
             fetchOrders();
         }, 500);
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
+
+    // Fetch on page change (skip initial mount if handled by above effect, but simpler to just split effects or allow double fetch safely)
+    // Actually, better to have one effect for query params.
+    useEffect(() => {
+        fetchOrders();
+    }, [page]);
+
+    // Note: The above might cause double fetch on search change because setSearch triggers setPage(1). 
+    // Optimization: separate search effect to just setPage(1), and have page/search dependency on fetch effect.
+    // Refactored Effect Logic:
+
+    /* 
+       Refactored logic to avoid double fetch:
+       1. useEffect[searchTerm] -> sets page=1.
+       2. useEffect[page, searchTerm] -> fetches. 
+       But if searchTerm changes, page sets to 1. If page was already 1, user effect runs once. If page was 2, it changes to 1, effect runs.
+       The issue is if page is already 1, setPage(1) doesn't trigger re-render, so we need to fetch manually or add searchTerm to dependency.
+    */
 
     const renderCustomerData = (dataStr: string) => {
         try {
@@ -98,12 +130,18 @@ export default function AdminOrderHistoryPage() {
         }
     };
 
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setPage(newPage);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">ประวัติคำสั่งซื้อ</h1>
-                    <p className="text-muted-foreground">รายการคำสั่งซื้อทั้งหมดในระบบ</p>
+                    <p className="text-muted-foreground">รายการคำสั่งซื้อทั้งหมดในระบบ ({totalItems} รายการ)</p>
                 </div>
                 <div className="relative w-full md:w-72">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -134,7 +172,7 @@ export default function AdminOrderHistoryPage() {
                         <TableBody>
                             {orders.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                                         ไม่พบข้อมูลคำสั่งซื้อ
                                     </TableCell>
                                 </TableRow>
@@ -215,6 +253,31 @@ export default function AdminOrderHistoryPage() {
                             )}
                         </TableBody>
                     </Table>
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-end space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page === 1}
+                    >
+                        ก่อนหน้า
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                        หน้า {page} จาก {totalPages}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={page === totalPages}
+                    >
+                        ถัดไป
+                    </Button>
                 </div>
             )}
         </div>

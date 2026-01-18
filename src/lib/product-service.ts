@@ -22,14 +22,17 @@ export interface Product {
 
 export async function getProductsByCategoryId(categoryId: number, shopId: number): Promise<Product[]> {
     try {
-        // Fetch products that have this category_id AND belong to this shop
-        // Join with categories to get no_agent_discount
+        // Optimized: Select specific columns instead of p.*
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT p.*, c.no_agent_discount,
-             (SELECT COALESCE(SUM(quantity), 0) FROM orders WHERE product_id = p.id AND status = 'completed') as sold
+            `SELECT p.id, p.name, p.price, p.description, p.image, p.account, p.created_at, p.slug, p.type, 
+             p.is_active, p.display_order,
+             c.no_agent_discount,
+             COALESCE(SUM(o.quantity), 0) as sold
              FROM products p
              LEFT JOIN categories c ON p.category_id = c.id
+             LEFT JOIN orders o ON o.product_id = p.id AND o.status = 'completed'
              WHERE p.category_id = ? AND p.shop_id = ? AND p.is_active = 1
+             GROUP BY p.id, p.name, p.price, p.description, p.image, p.account, p.created_at, p.slug, p.type, p.is_active, p.display_order, c.no_agent_discount
              ORDER BY p.display_order ASC, p.created_at DESC`,
             [categoryId, shopId]
         );
@@ -38,13 +41,25 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
         return rows.map(row => {
             let stock = 0;
             if (row.type === 'account' && row.account) {
-                stock = row.account.split('\\n').filter((line: string) => line.trim() !== '').length;
+                stock = row.account.split('\n').filter((line: string) => line.trim() !== '').length;
             }
             // Ensure price is a number
             return {
-                ...row,
+                id: row.id,
+                name: row.name,
                 price: Number(row.price),
-                stock
+                description: row.description,
+                image: row.image,
+                account: row.account, // We might need this for stock calc, but frontend might not need the full list if it's huge. 
+                // However, the interface requires it.
+                created_at: row.created_at,
+                slug: row.slug,
+                type: row.type,
+                stock,
+                is_active: Boolean(row.is_active),
+                sold: Number(row.sold),
+                no_agent_discount: row.no_agent_discount,
+                // category_name is not in this query, but that's fine as per interface optionality
             } as Product;
         });
     } catch (error) {
@@ -56,7 +71,9 @@ export async function getProductsByCategoryId(categoryId: number, shopId: number
 export async function getProductBySlug(slug: string, shopId?: number): Promise<Product | null> {
     try {
         let query = `
-            SELECT p.*, c.no_agent_discount, c.name as category_name, c.slug as category_slug 
+            SELECT p.id, p.name, p.price, p.description, p.image, p.account, p.created_at, p.slug, p.type, 
+                   p.is_active, p.category_id,
+                   c.no_agent_discount, c.name as category_name, c.slug as category_slug 
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             WHERE p.slug = ? AND p.is_active = 1
@@ -75,11 +92,29 @@ export async function getProductBySlug(slug: string, shopId?: number): Promise<P
         }
 
         const row = rows[0];
-        // Initialize stock to 0 and ensure price is number
+
+        // Calculate stock if needed (single product view might need specific stock count)
+        let stock = 0;
+        if (row.type === 'account' && row.account) {
+            stock = row.account.split('\n').filter((line: string) => line.trim() !== '').length;
+        }
+
         return {
-            ...row,
+            id: row.id,
+            name: row.name,
             price: Number(row.price),
-            stock: 0
+            description: row.description,
+            image: row.image,
+            account: row.account,
+            created_at: row.created_at,
+            slug: row.slug,
+            type: row.type,
+            stock: stock,
+            is_active: Boolean(row.is_active),
+            sold: 0, // Individual product fetch might not need total sold unless specified, kept 0 for now as per original
+            no_agent_discount: row.no_agent_discount,
+            category_name: row.category_name,
+            category_slug: row.category_slug
         } as Product;
     } catch (error) {
         console.error(`Error fetching product with slug ${slug}:`, error);

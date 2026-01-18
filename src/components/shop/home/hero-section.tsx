@@ -45,13 +45,17 @@ export function HeroSection({ images }: HeroSectionProps) {
                             {images.map((image, index) => (
                                 <div
                                     key={image.id}
-                                    className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentSlide ? "opacity-100" : "opacity-0"
+                                    className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
                                         }`}
                                 >
                                     <img
                                         src={image.image_url}
                                         alt={`Slide ${index + 1}`}
                                         className="w-full h-full object-cover"
+                                        loading={index === 0 ? "eager" : "lazy"}
+                                        // @ts-ignore
+                                        fetchPriority={index === 0 ? "high" : "auto"}
+                                        decoding={index === 0 ? "sync" : "async"}
                                     />
                                 </div>
                             ))}

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -160,7 +161,11 @@ export async function POST(request: Request) {
             ]
         );
 
-        return NextResponse.json({ success: true, id: result.insertId });
+        // Invalidate cache for shop pages
+        revalidatePath('/');
+        revalidatePath('/categories');
+
+        return NextResponse.json({ success: true, id: result.insertId, slug });
     } catch (error) {
         console.error("Create Product Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -247,6 +252,10 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
         }
 
+        // Invalidate cache for shop pages
+        revalidatePath('/');
+        revalidatePath('/categories');
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Update Product Error:", error);
@@ -281,6 +290,10 @@ export async function DELETE(request: Request) {
         if (result.affectedRows === 0) {
             return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
         }
+
+        // Invalidate cache for shop pages
+        revalidatePath('/');
+        revalidatePath('/categories');
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
