@@ -3,6 +3,29 @@ import { redirect } from "next/navigation";
 import ShopLayoutClient from "@/components/shop/ShopLayoutClient";
 import { headers } from "next/headers";
 import pool from "@/lib/db";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+    const shopId = await getShopIdFromContext();
+    if (!shopId) return {};
+
+    const [settingsRows] = await pool.query(
+        "SELECT site_title FROM site_settings WHERE shop_id = ?",
+        [shopId]
+    );
+    const settings = (settingsRows as any[])[0] || {};
+    const siteTitle = settings.site_title || 'Web Shop';
+
+    return {
+        title: {
+            template: `%s | ${siteTitle}`,
+            default: siteTitle,
+        },
+        icons: {
+            icon: '/favicon.ico', // Default icon, can be dynamic too
+        }
+    };
+}
 
 export default async function ShopLayout({
     children,

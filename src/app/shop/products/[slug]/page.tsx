@@ -30,6 +30,28 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const shopId = await getShopIdFromContext();
+  const product = await getProductBySlug(slug, shopId || 0);
+
+  if (!product) {
+    return {
+      title: 'ไม่พบสินค้า',
+    };
+  }
+
+  return {
+    title: product.name,
+    description: product.description ? product.description.slice(0, 150) : `รายละเอียดสินค้า ${product.name}`,
+    openGraph: {
+      images: product.image ? [product.image] : [],
+    },
+  };
+}
+
 // -------------------- Product Description --------------------
 function ProductDescription({ product, user }: { product: Product, user: any }) {
   return (

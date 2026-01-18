@@ -16,6 +16,13 @@ import { getAllCategories } from "@/lib/category-service";
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'หมวดหมู่สินค้า',
+  description: 'เลือกซื้อสินค้าจากหมวดหมู่ต่างๆ',
+};
+
 export default async function CategoriesPage() {
   const shopId = await getShopIdFromContext();
   const categories = await getAllCategories(shopId || 0);

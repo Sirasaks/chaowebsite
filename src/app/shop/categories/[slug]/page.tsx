@@ -24,6 +24,28 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const shopId = await getShopIdFromContext();
+  const category = await getCategoryBySlug(slug, shopId || 0);
+
+  if (!category) {
+    return {
+      title: 'ไม่พบหมวดหมู่',
+    };
+  }
+
+  return {
+    title: category.name,
+    description: `สินค้าในหมวดหมู่ ${category.name}`,
+    openGraph: {
+      images: category.image ? [category.image] : [],
+    },
+  };
+}
+
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params;
   const shopId = await getShopIdFromContext();

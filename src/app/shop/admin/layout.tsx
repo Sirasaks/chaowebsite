@@ -4,6 +4,14 @@ import PageTransition from "@/components/shop/PageTransition";
 import { getShopIdFromContext } from "@/lib/shop-helper";
 import { checkShopAdmin } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: {
+        template: '%s | ระบบจัดการร้านค้า',
+        default: 'ระบบจัดการร้านค้า',
+    },
+};
 
 export default async function AdminLayout({
     children,

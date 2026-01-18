@@ -1,6 +1,12 @@
 import { verifyShopSession } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import ResetPasswordForm from "@/components/shop/ResetPasswordForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "ตั้งรหัสผ่านใหม่",
+  description: "กำหนดรหัสผ่านใหม่ของคุณ",
+};
 import { Suspense } from "react";
 import pool from "@/lib/db";
 import crypto from "crypto";

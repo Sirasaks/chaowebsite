@@ -57,6 +57,25 @@ async function ProductsWrapper({ shopId }: { shopId: number }) {
   return <RecommendedProducts products={products as any[]} user={user} />;
 }
 
+import { Metadata } from 'next';
+import pool from "@/lib/db";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const shopId = await getShopIdFromContext();
+  const safeShopId = shopId || 0;
+
+  const [settingsRows] = await pool.query(
+    "SELECT site_title, site_description FROM site_settings WHERE shop_id = ?",
+    [safeShopId]
+  );
+  const settings = (settingsRows as any[])[0] || {};
+
+  return {
+    title: settings.site_title || 'หน้าแรก',
+    description: settings.site_description || 'ยินดีต้อนรับสู่ร้านค้าของเรา',
+  };
+}
+
 export default async function Page() {
   const shopId = await getShopIdFromContext();
   const safeShopId = shopId || 0;
