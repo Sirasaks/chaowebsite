@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { WebVitals } from "@/components/WebVitals";
 import { headers } from "next/headers";
 import NextTopLoader from 'nextjs-toploader';
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Initialize all fonts
 const notoSansThai = Noto_Sans_Thai({
@@ -139,6 +141,8 @@ export default async function RootLayout({
           {children}
           <Toaster position="top-right" />
         </Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

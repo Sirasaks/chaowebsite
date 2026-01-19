@@ -14,7 +14,11 @@ export async function GET(req: Request) {
             "SELECT * FROM quick_links WHERE shop_id = ? ORDER BY display_order ASC",
             [shopId]
         );
-        return NextResponse.json(rows);
+        return NextResponse.json(rows, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'
+            }
+        });
     } catch (error) {
         console.error("Error fetching quick links:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

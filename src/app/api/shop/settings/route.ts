@@ -31,10 +31,18 @@ export async function GET(req: Request) {
                 contact_link: '',
                 announcement_text: '',
                 site_font: 'noto_sans_thai'
+            }, {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'
+                }
             });
         }
 
-        return NextResponse.json(rows[0]);
+        return NextResponse.json(rows[0], {
+            headers: {
+                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'
+            }
+        });
     } catch (error) {
         console.error("Fetch Settings Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
