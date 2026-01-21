@@ -52,7 +52,7 @@ export default async function ShopLayout({
 
     // 3. Fetch Shop Settings
     const [settingsRows] = await pool.query(
-        "SELECT site_title, site_logo, contact_link, announcement_text FROM site_settings WHERE shop_id = ?",
+        "SELECT site_title, site_logo, contact_link, announcement_text, site_background FROM site_settings WHERE shop_id = ?",
         [shopId]
     );
     const settings = (settingsRows as any[])[0] || {};

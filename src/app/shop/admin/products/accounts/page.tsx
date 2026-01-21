@@ -347,7 +347,7 @@ export default function AdminAccountsPage() {
                             <Input
                                 value={formData.image}
                                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                placeholder="500x500 px (อัตราส่วน 1:1)"
+                                placeholder="600x600 px (อัตราส่วน 1:1)"
                             />
                         </div>
 

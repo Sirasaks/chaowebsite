@@ -134,8 +134,35 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: auto;
+  }
+
+  /* WebKit browsers (Chrome, Edge, Safari) */
+  *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--primary);
+    border-radius: 6px;
+
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+
   }
 }
 
@@ -171,7 +198,7 @@
     opacity: 0;
     animation: fadeInUp 0.7s ease-out forwards;
   }
-  
+
   .animate-coin-spin {
     animation: coin-spin 0.8s linear;
   }
