@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidateTag } from "next/cache";
 
 // Helper to check admin role with shop scope - SECURITY FIX
 async function checkAdmin(shopId: number): Promise<boolean> {
@@ -54,6 +55,9 @@ export async function POST(req: Request) {
             [shopId, image_url, nextOrder]
         );
 
+        // Invalidate cache immediately
+        revalidateTag('slideshow', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Add Slideshow Error:", error);
@@ -91,6 +95,9 @@ export async function PUT(req: Request) {
             await connection.query("UPDATE slideshow_images SET display_order = ? WHERE id = ? AND shop_id = ?", [display_order, id, shopId]);
         }
 
+        // Invalidate cache immediately
+        revalidateTag('slideshow', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Update Slideshow Error:", error);
@@ -125,6 +132,9 @@ export async function DELETE(req: Request) {
         if (result.affectedRows === 0) {
             return NextResponse.json({ error: "Image not found or not authorized" }, { status: 404 });
         }
+
+        // Invalidate cache immediately
+        revalidateTag('slideshow', { expire: 0 });
 
         return NextResponse.json({ success: true });
     } catch (error) {

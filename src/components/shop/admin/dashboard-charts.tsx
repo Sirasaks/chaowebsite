@@ -89,8 +89,8 @@ export function DashboardCharts() {
         }
     };
 
-    const calculateTrend = (data: any[], key: string) => {
-        if (data.length < 2) return 0;
+    const calculateTrend = (data: any[] | undefined, key: string) => {
+        if (!data || data.length < 2) return 0;
         const half = Math.floor(data.length / 2);
         const recent = data.slice(-half).reduce((sum, d) => sum + (d[key] || 0), 0);
         const previous = data.slice(0, half).reduce((sum, d) => sum + (d[key] || 0), 0);
@@ -103,7 +103,8 @@ export function DashboardCharts() {
     const salesTrend = calculateTrend(data.sales, 'total');
     const usersTrend = calculateTrend(data.users, 'count');
 
-    const calculateStats = (data: any[], key: string) => {
+    const calculateStats = (data: any[] | undefined, key: string) => {
+        if (!data || data.length === 0) return { total: 0, average: 0 };
         const total = data.reduce((sum, d) => sum + (d[key] || 0), 0);
         const average = total / data.length || 0;
         return { total, average };

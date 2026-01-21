@@ -74,7 +74,7 @@ export default async function RootLayout({
   const selectedFont = fontMap[settings.site_font || 'noto_sans_thai'] || fontMap.noto_sans_thai;
 
   return (
-    <html lang="th" suppressHydrationWarning>
+    <html lang="th" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <style>{`
           :root {
@@ -119,9 +119,7 @@ export default async function RootLayout({
             flex-direction: column;
             min-height: 100vh;
           }
-          html {
-            scroll-behavior: smooth;
-          }
+
         `}</style>
       </head>
       <body className={selectedFont.className} suppressHydrationWarning={true}>

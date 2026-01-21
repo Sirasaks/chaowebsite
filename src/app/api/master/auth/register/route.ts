@@ -8,12 +8,9 @@ import axios from "axios";
 import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
 import { logSecurityEvent } from "@/lib/security-logger";
 
-// ✅ Password Policy: ต้องมีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก ตัวเลข และอักขระพิเศษ
+// ✅ Password Policy: 6 ตัวอักษรขึ้นไป (เหมือน Shop)
 const passwordSchema = z.string()
-    .min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
-    .regex(/[A-Z]/, "ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว")
-    .regex(/[a-z]/, "ต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว")
-    .regex(/[0-9]/, "ต้องมีตัวเลขอย่างน้อย 1 ตัว");
+    .min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
 
 const registerSchema = z.object({
     username: z.string().min(3),

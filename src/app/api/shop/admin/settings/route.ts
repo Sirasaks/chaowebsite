@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { invalidateSettingsCache } from "@/lib/settings-cache";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { RowDataPacket, ResultSetHeader } from "mysql2";
@@ -100,6 +100,9 @@ export async function PUT(req: Request) {
 
         // Invalidate in-memory cache
         invalidateSettingsCache();
+
+        // Invalidate Next.js cache tags
+        revalidateTag('settings', { expire: 0 });
 
         // Force Next.js to re-render the RootLayout to apply new CSS variables
         revalidatePath("/", "layout");

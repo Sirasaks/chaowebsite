@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidateTag } from "next/cache";
 
 // Helper to check admin role with shop scope - SECURITY FIX
 async function checkAdmin(shopId: number): Promise<boolean> {
@@ -59,6 +60,9 @@ export async function POST(req: Request) {
             [shopId, title, image_url, link_url, is_external, display_order || 0]
         );
 
+        // Invalidate cache immediately
+        revalidateTag('quick-links', { expire: 0 });
+
         // @ts-ignore
         return NextResponse.json({ id: result.insertId, ...body });
     } catch (error) {
@@ -90,6 +94,9 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: "Quick link not found or not authorized" }, { status: 404 });
         }
 
+        // Invalidate cache immediately
+        revalidateTag('quick-links', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Error updating quick link:", error);
@@ -120,6 +127,9 @@ export async function DELETE(req: Request) {
         if (result.affectedRows === 0) {
             return NextResponse.json({ error: "Quick link not found or not authorized" }, { status: 404 });
         }
+
+        // Invalidate cache immediately
+        revalidateTag('quick-links', { expire: 0 });
 
         return NextResponse.json({ success: true });
     } catch (error) {

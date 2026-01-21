@@ -48,7 +48,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
     const router = useRouter()
 
     // Fetch shops when dialog opens or switch to Renew
-    useState(() => {
+    useEffect(() => {
         if (isOpen) {
             fetch("/api/master/history")
                 .then(res => res.json())
@@ -57,7 +57,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                 })
                 .catch(err => console.error(err))
         }
-    })
+    }, [isOpen])
 
     // Animate processing steps
     const currentSteps = operationType === "new" ? NEW_STEPS : RENEW_STEPS
@@ -200,7 +200,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                             }}
                                             className="font-bold text-blue-600"
                                         />
-                                        <span className="text-sm font-bold text-gray-500">.localhost:3000</span>
+                                        <span className="text-sm font-bold text-gray-500">.chaoweb.site</span>
                                     </div>
                                     <p className="text-xs text-gray-500">
                                         ใช้สำหรับเข้าสู่เว็บไซต์
@@ -284,7 +284,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                                         : "opacity-0 h-0 overflow-hidden"
                                         }`}
                                 >
-                                    <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                    <Check className="h-5 w-5 text-green-600 shrink-0" />
                                     <span className="text-green-700">{s.text}</span>
                                 </div>
                             ))}
@@ -292,7 +292,7 @@ export function RentWebDialog({ isOpen, onClose, packagePrice, packageName, user
                             {/* Redirect message */}
                             {redirecting && (
                                 <div className="flex items-center gap-3 text-blue-600 animate-pulse mt-4">
-                                    <Info className="h-5 w-5 flex-shrink-0" />
+                                    <Info className="h-5 w-5 shrink-0" />
                                     <span>กำลังนำคุณไปที่หน้าโปรไฟล์...</span>
                                 </div>
                             )}

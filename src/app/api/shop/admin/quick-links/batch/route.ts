@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidateTag } from "next/cache";
 
 export async function POST(request: Request) {
     const shopId = await getShopIdFromRequest(request);
@@ -58,6 +59,9 @@ export async function POST(request: Request) {
         }
 
         await connection.commit();
+
+        // Invalidate cache immediately
+        revalidateTag('quick-links', { expire: 0 });
 
         return NextResponse.json({ message: "บันทึกข้อมูลสำเร็จ" });
 

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -161,9 +161,9 @@ export async function POST(request: Request) {
             ]
         );
 
-        // Invalidate cache for shop pages
-        revalidatePath('/');
-        revalidatePath('/categories');
+        // Invalidate cache immediately
+        revalidateTag('products', { expire: 0 });
+        revalidateTag('categories', { expire: 0 });
 
         return NextResponse.json({ success: true, id: result.insertId, slug });
     } catch (error) {
@@ -252,9 +252,9 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
         }
 
-        // Invalidate cache for shop pages
-        revalidatePath('/');
-        revalidatePath('/categories');
+        // Invalidate cache immediately
+        revalidateTag('products', { expire: 0 });
+        revalidateTag('categories', { expire: 0 });
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -291,9 +291,9 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: "Product not found or not authorized" }, { status: 404 });
         }
 
-        // Invalidate cache for shop pages
-        revalidatePath('/');
-        revalidatePath('/categories');
+        // Invalidate cache immediately
+        revalidateTag('products', { expire: 0 });
+        revalidateTag('categories', { expire: 0 });
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

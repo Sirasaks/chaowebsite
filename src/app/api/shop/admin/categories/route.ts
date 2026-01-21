@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
             [shopId, name, slug, image || "", is_recommended || false, display_order || 0, is_active !== undefined ? is_active : 1, no_agent_discount || false]
         );
 
+        // Invalidate cache immediately
+        revalidateTag('categories', { expire: 0 });
+        revalidateTag('products', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Create Category Error:", error);
@@ -135,6 +140,10 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "Category not found or not authorized" }, { status: 404 });
         }
 
+        // Invalidate cache immediately
+        revalidateTag('categories', { expire: 0 });
+        revalidateTag('products', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Update Category Error:", error);
@@ -179,6 +188,10 @@ export async function DELETE(request: Request) {
         if (result.affectedRows === 0) {
             return NextResponse.json({ error: "Category not found or not authorized" }, { status: 404 });
         }
+
+        // Invalidate cache immediately
+        revalidateTag('categories', { expire: 0 });
+        revalidateTag('products', { expire: 0 });
 
         return NextResponse.json({ success: true });
     } catch (error) {

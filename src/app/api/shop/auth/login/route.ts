@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
-import { getJwtSecret } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
+import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
+import { logSecurityEvent } from "@/lib/security-logger";
 
 const loginSchema = z.object({
   login: z.string(),
@@ -13,11 +13,13 @@ const loginSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+
   try {
-    const ip = (req.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
-    const { success } = rateLimit(ip, { limit: 5, windowMs: 60000 });
+    const { success } = rateLimit(`shop-login:${ip}`, { limit: 5, windowMs: 60000 });
 
     if (!success) {
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', { ip, endpoint: '/api/shop/auth/login' });
       return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอสักครู่" }, { status: 429 });
     }
 
@@ -47,26 +49,35 @@ export async function POST(req: Request) {
       [login, login, shopId]
     );
     const user = (rows as any[])[0];
-    if (!user) return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+
+    if (!user) {
+      logSecurityEvent('LOGIN_FAILED', { ip, username: login, reason: 'user_not_found', shopId });
+      return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+    if (!match) {
+      logSecurityEvent('LOGIN_FAILED', { ip, username: login, reason: 'invalid_password', shopId });
+      return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+    }
 
-    const token = jwt.sign({ userId: user.id, role: user.role, tokenType: 'shop' }, getJwtSecret(), { expiresIn: "7d" });
+    // ✅ Token Rotation: Access Token (15m) + Refresh Token (7d)
+    const { accessToken, refreshToken } = await generateTokenPair(
+      user.id,
+      user.role,
+      "shop",
+      shopId
+    );
 
-    const cookie = serialize("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-    });
+    logSecurityEvent('LOGIN_SUCCESS', { ip, userId: user.id, username: user.username, shopId });
 
     const res = NextResponse.json({
       message: "เข้าสู่ระบบสำเร็จ",
       user: { id: user.id, username: user.username, role: user.role, credit: user.credit },
     });
-    res.headers.set("Set-Cookie", cookie);
+
+    res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
+    res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
     return res;
 
   } catch (err: any) {
@@ -75,3 +86,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
   }
 }
+

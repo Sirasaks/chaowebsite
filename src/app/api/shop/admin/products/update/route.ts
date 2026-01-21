@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { RowDataPacket } from "mysql2";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,10 @@ export async function POST(request: Request) {
         const query = `UPDATE products SET ${fields.join(", ")} WHERE id = ? AND shop_id = ?`;
 
         await connection.query(query, params);
+
+        // Invalidate cache immediately
+        revalidateTag('products', { expire: 0 });
+        revalidateTag('categories', { expire: 0 });
 
         return NextResponse.json({ message: "Product updated successfully" });
 
