@@ -4,6 +4,7 @@ import { RowDataPacket } from "mysql2";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mail";
 import { rateLimit } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/security-logger";
 
 export async function POST(request: Request) {
     // Rate limiting: 3 attempts per minute per IP
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
     const { success } = rateLimit(`master-forgot:${ip}`, { limit: 3, windowMs: 60000 });
 
     if (!success) {
+        logSecurityEvent('RATE_LIMIT_EXCEEDED', { ip, endpoint: '/api/master/auth/forgot-password' });
         return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
     }
 
@@ -29,6 +31,16 @@ export async function POST(request: Request) {
         );
 
         if (users.length === 0) {
+            // ✅ Timing Attack Mitigation: Fake delay (1-2 seconds)
+            const fakeDelay = Math.floor(Math.random() * 1000) + 1000;
+            await new Promise(resolve => setTimeout(resolve, fakeDelay));
+
+            logSecurityEvent('PASSWORD_RESET_REQUESTED', {
+                ip,
+                email,
+                status: 'user_not_found'
+            });
+
             // Don't reveal that user doesn't exist
             return NextResponse.json({ message: "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว" });
         }
@@ -84,8 +96,13 @@ export async function POST(request: Request) {
             });
         } catch (mailError) {
             console.error("Failed to send email:", mailError);
-            // Don't log the token for security reasons
         }
+
+        logSecurityEvent('PASSWORD_RESET_REQUESTED', {
+            ip,
+            email,
+            status: 'success'
+        });
 
         return NextResponse.json({
             message: "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว"

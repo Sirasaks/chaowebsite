@@ -1,7 +1,7 @@
 // src/context/AuthContext.tsx
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction, useMemo, useCallback, useRef } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction, useMemo, useCallback } from "react"
 
 interface User {
   username: string
@@ -23,45 +23,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 interface AuthProviderProps {
   children: ReactNode
   endpoint: string
-  refreshEndpoint: string
 }
 
-// Token refresh interval (refresh before access token expires)
-const TOKEN_REFRESH_INTERVAL = 14 * 60 * 1000 // 14 minutes (access token expires at 15m)
-
-function BaseAuthProvider({ children, endpoint, refreshEndpoint }: AuthProviderProps) {
+function BaseAuthProvider({ children, endpoint }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const isRefreshingRef = useRef(false)
 
-  // ✅ Token Refresh Function
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    // Prevent concurrent refresh calls
-    if (isRefreshingRef.current) return false
-    isRefreshingRef.current = true
-
-    try {
-      const res = await fetch(refreshEndpoint, { method: "POST" })
-      if (res.ok) {
-        console.log("[Auth] Token refreshed successfully")
-        return true
-      } else {
-        console.log("[Auth] Token refresh failed, logging out")
-        setUser(null)
-        return false
-      }
-    } catch (err) {
-      console.error("[Auth] Token refresh error:", err)
-      return false
-    } finally {
-      isRefreshingRef.current = false
-    }
-  }, [refreshEndpoint])
-
-  // ✅ Fetch User with Auto-Retry on 401
-  const fetchUser = useCallback(async (isRetry = false) => {
+  // ✅ Fetch User
+  const fetchUser = useCallback(async () => {
     try {
       const res = await fetch(endpoint)
 
@@ -76,14 +46,6 @@ function BaseAuthProvider({ children, endpoint, refreshEndpoint }: AuthProviderP
           })
           return true
         }
-      } else if (res.status === 401 && !isRetry) {
-        // Token expired, try to refresh
-        console.log("[Auth] Access token expired, attempting refresh...")
-        const refreshed = await refreshToken()
-        if (refreshed) {
-          // Retry fetching user after refresh
-          return fetchUser(true)
-        }
       }
 
       setUser(null)
@@ -94,7 +56,7 @@ function BaseAuthProvider({ children, endpoint, refreshEndpoint }: AuthProviderP
       setUser(null)
       return false
     }
-  }, [endpoint, refreshToken])
+  }, [endpoint])
 
   // ✅ Manual Refresh Function (for external use)
   const refreshAuth = useCallback(async () => {
@@ -114,25 +76,6 @@ function BaseAuthProvider({ children, endpoint, refreshEndpoint }: AuthProviderP
     init()
   }, [fetchUser])
 
-  // ✅ Setup Auto-Refresh Interval
-  useEffect(() => {
-    if (user) {
-      // Start auto-refresh interval when user is logged in
-      refreshIntervalRef.current = setInterval(async () => {
-        console.log("[Auth] Auto-refreshing token...")
-        await refreshToken()
-      }, TOKEN_REFRESH_INTERVAL)
-    }
-
-    return () => {
-      // Cleanup interval on unmount or user logout
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-        refreshIntervalRef.current = null
-      }
-    }
-  }, [user, refreshToken])
-
   const value = useMemo(() => ({
     user, setUser, loading, error, refreshAuth
   }), [user, loading, error, refreshAuth])
@@ -142,10 +85,7 @@ function BaseAuthProvider({ children, endpoint, refreshEndpoint }: AuthProviderP
 
 export function ShopAuthProvider({ children }: { children: ReactNode }) {
   return (
-    <BaseAuthProvider
-      endpoint="/api/shop/auth/me"
-      refreshEndpoint="/api/shop/auth/refresh"
-    >
+    <BaseAuthProvider endpoint="/api/shop/auth/me">
       {children}
     </BaseAuthProvider>
   )
@@ -153,10 +93,7 @@ export function ShopAuthProvider({ children }: { children: ReactNode }) {
 
 export function MasterAuthProvider({ children }: { children: ReactNode }) {
   return (
-    <BaseAuthProvider
-      endpoint="/api/master/auth/me"
-      refreshEndpoint="/api/master/auth/refresh"
-    >
+    <BaseAuthProvider endpoint="/api/master/auth/me">
       {children}
     </BaseAuthProvider>
   )
@@ -171,4 +108,3 @@ export const useAuth = () => {
   }
   return context
 }
-

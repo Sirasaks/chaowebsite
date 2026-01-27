@@ -20,12 +20,8 @@ export async function GET(req: Request) {
     let decoded: { userId: number; role?: string };
     try {
       decoded = jwt.verify(token, secret) as { userId: number; role?: string };
-    } catch (jwtError: any) {
-      // Token expired or invalid - return 401 to trigger refresh
-      if (jwtError.name === 'TokenExpiredError') {
-        return NextResponse.json({ error: "Token expired" }, { status: 401 });
-      }
-      // Other JWT errors (invalid signature, etc.)
+    } catch (jwtError) {
+      // Token expired or invalid
       return NextResponse.json({ user: null });
     }
 
@@ -38,25 +34,6 @@ export async function GET(req: Request) {
     const user = (rows as any[])[0];
 
     if (!user) return NextResponse.json({ user: null });
-
-    // Check if role has changed
-    if (user.role !== decoded.role) {
-      // Generate new token with updated role
-      const newToken = jwt.sign(
-        { userId: user.id, role: user.role, tokenType: 'shop' },
-        secret,
-        { expiresIn: "15m" }
-      );
-
-      // Update cookie
-      cookieStore.set("token", newToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 15 * 60, // 15 minutes
-      });
-    }
 
     return NextResponse.json({ user });
   } catch (err) {

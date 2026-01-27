@@ -11,7 +11,13 @@ export async function GET() {
 
         if (!token) return NextResponse.json({ user: null });
 
-        const decoded = jwt.verify(token, getJwtSecret()) as { userId: number; role?: string };
+        let decoded: { userId: number; role?: string };
+        try {
+            decoded = jwt.verify(token, getJwtSecret()) as { userId: number; role?: string };
+        } catch (jwtError) {
+            // Token expired or invalid
+            return NextResponse.json({ user: null });
+        }
 
         // Check if it's a Master User
         const [rows] = await pool.query(

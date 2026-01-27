@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
+import { rateLimit } from "@/lib/rate-limit";
 
 interface RedeemResponse {
     success: boolean;
@@ -94,6 +95,14 @@ export async function POST(request: Request) {
     const shopId = await getShopIdFromRequest(request);
     if (!shopId) {
         return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Rate limiting: 10 topup attempts per minute per IP per shop
+    const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
+    const { success: rateLimitSuccess } = rateLimit(`shop-angpao:${shopId}:${ip}`, { limit: 10, windowMs: 60000 });
+
+    if (!rateLimitSuccess) {
+        return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
     }
 
     const connection = await pool.getConnection();

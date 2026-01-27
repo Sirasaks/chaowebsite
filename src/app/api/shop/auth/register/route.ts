@@ -8,7 +8,6 @@ import { getJwtSecret } from "@/lib/env";
 import axios from "axios";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
-import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
 import { logSecurityEvent, logRateLimitExceeded } from "@/lib/security-logger";
 
 const registerSchema = z.object({
@@ -77,8 +76,6 @@ export async function POST(req: Request) {
       [username, email, shopId]
     );
     if ((existing as any[]).length > 0) {
-      // Don't log reason as duplicate if you want to be generic, but here we are explicit to user so we know.
-      // For security log, it's fine.
       logSecurityEvent('REGISTER_FAILED', { ip, username, reason: 'duplicate_user', shopId });
       return NextResponse.json({ error: "Username หรือ Email ถูกใช้แล้วในร้านค้านี้" }, { status: 400 });
     }
@@ -91,12 +88,12 @@ export async function POST(req: Request) {
 
     const userId = (result as any).insertId;
 
-    // ✅ ใช้ Token Service (Token Rotation)
-    const { accessToken, refreshToken } = await generateTokenPair(
-      userId,
-      "user",
-      "shop",
-      shopId
+    // ✅ Simple: Single Token (7 days)
+    const secret = getJwtSecret();
+    const token = jwt.sign(
+      { userId, role: "user", tokenType: 'shop', shopId },
+      secret,
+      { expiresIn: "7d" }
     );
 
     // Log Success
@@ -112,8 +109,14 @@ export async function POST(req: Request) {
       },
     });
 
-    res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
-    res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
+    res.headers.set("Set-Cookie", serialize("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    }));
+
     return res;
 
   } catch (err: any) {

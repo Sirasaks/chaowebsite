@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
-import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
 import { logSecurityEvent } from "@/lib/security-logger";
+import { getJwtSecret } from "@/lib/env";
 
 const loginSchema = z.object({
   login: z.string(),
@@ -61,12 +62,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 });
     }
 
-    // ✅ Token Rotation: Access Token (15m) + Refresh Token (7d)
-    const { accessToken, refreshToken } = await generateTokenPair(
-      user.id,
-      user.role,
-      "shop",
-      shopId
+    // ✅ Simple: Single Token (7 days)
+    const secret = getJwtSecret();
+    const token = jwt.sign(
+      { userId: user.id, role: user.role, tokenType: 'shop', shopId },
+      secret,
+      { expiresIn: "7d" }
     );
 
     logSecurityEvent('LOGIN_SUCCESS', { ip, userId: user.id, username: user.username, shopId });
@@ -76,8 +77,14 @@ export async function POST(req: Request) {
       user: { id: user.id, username: user.username, role: user.role, credit: user.credit },
     });
 
-    res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
-    res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
+    res.headers.set("Set-Cookie", serialize("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    }));
+
     return res;
 
   } catch (err: any) {
@@ -86,4 +93,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
   }
 }
-

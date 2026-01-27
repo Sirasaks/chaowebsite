@@ -5,19 +5,13 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { RowDataPacket } from "mysql2";
 import { getJwtSecret } from "@/lib/env";
-import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { rateLimit } from "@/lib/rate-limit";
 import { logSecurityEvent } from "@/lib/security-logger";
 
 export async function POST(request: Request) {
-    const shopId = await getShopIdFromRequest(request);
-    if (!shopId) {
-        return NextResponse.json({ error: "Shop not found" }, { status: 404 });
-    }
-
     // Rate limiting: 5 attempts per minute per IP
     const ip = (request.headers.get("x-forwarded-for") ?? "127.0.0.1").split(",")[0];
-    const { success } = rateLimit(`shop-change-pwd:${shopId}:${ip}`, { limit: 5, windowMs: 60000 });
+    const { success } = rateLimit(`master-change-pwd:${ip}`, { limit: 5, windowMs: 60000 });
 
     if (!success) {
         return NextResponse.json({ error: "ทำรายการเร็วเกินไป กรุณารอ 1 นาที" }, { status: 429 });
@@ -54,19 +48,19 @@ export async function POST(request: Request) {
 
         // 3. Verify Current Password
         const [users] = await connection.query<RowDataPacket[]>(
-            "SELECT password FROM users WHERE id = ? AND shop_id = ?",
-            [userId, shopId]
+            "SELECT id, username, password FROM master_users WHERE id = ?",
+            [userId]
         );
 
         if (users.length === 0) {
-            return NextResponse.json({ error: "ไม่พบผู้ใช้งานในร้านค้านี้" }, { status: 404 });
+            return NextResponse.json({ error: "ไม่พบผู้ใช้งาน" }, { status: 404 });
         }
 
         const user = users[0];
         const passwordMatch = await bcrypt.compare(currentPassword, user.password);
 
         if (!passwordMatch) {
-            logSecurityEvent('PASSWORD_CHANGE_FAILED', { ip, userId, shopId, reason: 'invalid_current_password' });
+            logSecurityEvent('PASSWORD_CHANGE_FAILED', { ip, userId, username: user.username, reason: 'invalid_current_password' });
             return NextResponse.json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" }, { status: 400 });
         }
 
@@ -74,11 +68,11 @@ export async function POST(request: Request) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         await connection.query(
-            "UPDATE users SET password = ? WHERE id = ? AND shop_id = ?",
-            [hashedPassword, userId, shopId]
+            "UPDATE master_users SET password = ? WHERE id = ?",
+            [hashedPassword, userId]
         );
 
-        logSecurityEvent('PASSWORD_CHANGE_SUCCESS', { ip, userId, shopId });
+        logSecurityEvent('PASSWORD_CHANGE_SUCCESS', { ip, userId, username: user.username });
 
         return NextResponse.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });
 

@@ -6,8 +6,38 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { revalidateTag } from "next/cache";
+import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
+
+// ✅ Zod Schemas for Input Validation
+const createProductSchema = z.object({
+    name: z.string().min(1, "กรุณากรอกชื่อสินค้า").max(200),
+    price: z.number().positive("ราคาต้องมากกว่า 0"),
+    type: z.enum(["account", "form"], { message: "ประเภทสินค้าไม่ถูกต้อง" }),
+    image: z.string().optional(),
+    description: z.string().max(5000).optional(),
+    account: z.string().optional(),
+    is_recommended: z.boolean().optional(),
+    display_order: z.number().int().min(0).optional(),
+    is_active: z.boolean().optional(),
+    category_id: z.number().int().positive().nullable().optional(),
+    slug: z.string().regex(/^[a-z0-9-]*$/).optional(),
+});
+
+const updateProductSchema = z.object({
+    id: z.number().int().positive("ID ไม่ถูกต้อง"),
+    name: z.string().min(1).max(200).optional(),
+    price: z.number().positive().optional(),
+    image: z.string().optional(),
+    description: z.string().max(5000).optional(),
+    account: z.string().optional(),
+    is_recommended: z.boolean().optional(),
+    display_order: z.number().int().min(0).optional(),
+    is_active: z.boolean().optional(),
+    category_id: z.number().int().positive().nullable().optional(),
+    slug: z.string().regex(/^[a-z0-9-]*$/).optional(),
+});
 
 // Helper to generate slug
 function generateSlug(name: string) {
@@ -86,11 +116,17 @@ export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { name, price, image, description, type, account, is_recommended, display_order, is_active, category_id, slug: inputSlug } = body;
 
-        if (!name || !price || !type) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        // ✅ Zod Validation
+        const parseResult = createProductSchema.safeParse(body);
+        if (!parseResult.success) {
+            return NextResponse.json(
+                { error: parseResult.error.issues[0].message },
+                { status: 400 }
+            );
         }
+
+        const { name, price, image, description, type, account, is_recommended, display_order, is_active, category_id, slug: inputSlug } = parseResult.data;
 
         let slug: string;
 

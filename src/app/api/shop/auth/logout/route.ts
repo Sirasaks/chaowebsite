@@ -4,8 +4,9 @@ import { cookies } from "next/headers";
 export async function POST() {
   const cookieStore = await cookies();
 
-  // Explicitly set the cookie to expire immediately with the correct path
+  // Clear the single token cookie
   cookieStore.set("token", "", { maxAge: 0, path: "/" });
+  cookieStore.set("refresh_token", "", { maxAge: 0, path: "/" }); // Clear legacy refresh_token if exists
 
   return NextResponse.json({ message: "ออกจากระบบเรียบร้อยแล้ว" });
 }

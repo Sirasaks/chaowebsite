@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import axios from "axios";
-import { generateTokenPair, getAccessTokenCookieOptions, getRefreshTokenCookieOptions } from "@/lib/token-service";
 import { logSecurityEvent } from "@/lib/security-logger";
+import { getJwtSecret } from "@/lib/env";
 
-// ✅ Password Policy: 6 ตัวอักษรขึ้นไป (เหมือน Shop)
-const passwordSchema = z.string()
-    .min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
-
+// ✅ Password Policy: 6 ตัวอักษรขึ้นไป
 const registerSchema = z.object({
     username: z.string().min(3),
     email: z.string().email(),
-    password: passwordSchema,
+    password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
     captchaToken: z.string().optional(),
 });
 
@@ -82,11 +80,12 @@ export async function POST(req: Request) {
         );
         const userId = (userResult as any).insertId;
 
-        // 3. ✅ Token Rotation: Access Token (15m) + Refresh Token (7d)
-        const { accessToken, refreshToken } = await generateTokenPair(
-            userId,
-            "user",
-            "master"
+        // 3. ✅ Simple: Single Token (7 days)
+        const secret = getJwtSecret();
+        const token = jwt.sign(
+            { userId, role: "user", tokenType: 'master' },
+            secret,
+            { expiresIn: "7d" }
         );
 
         logSecurityEvent('REGISTER_SUCCESS', { ip, userId, username });
@@ -96,8 +95,14 @@ export async function POST(req: Request) {
             user: { id: userId, username, role: "user" },
         });
 
-        res.headers.set("Set-Cookie", serialize("token", accessToken, getAccessTokenCookieOptions()));
-        res.headers.append("Set-Cookie", serialize("refresh_token", refreshToken, getRefreshTokenCookieOptions()));
+        res.headers.set("Set-Cookie", serialize("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+        }));
+
         return res;
 
     } catch (err: any) {

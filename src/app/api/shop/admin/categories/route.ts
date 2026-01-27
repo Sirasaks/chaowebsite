@@ -6,8 +6,31 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "@/lib/env";
 import { getShopIdFromRequest } from "@/lib/shop-helper";
 import { revalidateTag } from "next/cache";
+import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
+
+// ✅ Zod Schemas for Input Validation
+const createCategorySchema = z.object({
+    name: z.string().min(1, "กรุณากรอกชื่อหมวดหมู่").max(100),
+    image: z.string().url().optional().or(z.literal("")),
+    slug: z.string().regex(/^[a-z0-9-]*$/, "URL ต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์เล็ก ตัวเลข หรือ - เท่านั้น").optional(),
+    is_recommended: z.boolean().optional(),
+    display_order: z.number().int().min(0).optional(),
+    is_active: z.boolean().optional(),
+    no_agent_discount: z.boolean().optional(),
+});
+
+const updateCategorySchema = z.object({
+    id: z.number().int().positive("ID ไม่ถูกต้อง"),
+    name: z.string().min(1, "กรุณากรอกชื่อหมวดหมู่").max(100),
+    image: z.string().url().optional().or(z.literal("")),
+    slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "URL ต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์เล็ก ตัวเลข หรือ - เท่านั้น"),
+    is_recommended: z.boolean().optional(),
+    display_order: z.number().int().min(0).optional(),
+    is_active: z.boolean().optional(),
+    no_agent_discount: z.boolean().optional(),
+});
 
 // Helper to check admin role with shop scope - SECURITY FIX
 async function checkAdmin(shopId: number): Promise<boolean> {
@@ -66,11 +89,17 @@ export async function POST(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { name, image, slug: providedSlug, is_recommended, display_order, is_active, no_agent_discount } = body;
 
-        if (!name) {
-            return NextResponse.json({ error: "Name is required" }, { status: 400 });
+        // ✅ Zod Validation
+        const parseResult = createCategorySchema.safeParse(body);
+        if (!parseResult.success) {
+            return NextResponse.json(
+                { error: parseResult.error.issues[0].message },
+                { status: 400 }
+            );
         }
+
+        const { name, image, slug: providedSlug, is_recommended, display_order, is_active, no_agent_discount } = parseResult.data;
 
         const slug = providedSlug || (name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Math.floor(Math.random() * 1000));
 
@@ -115,11 +144,17 @@ export async function PUT(request: Request) {
     const connection = await pool.getConnection();
     try {
         const body = await request.json();
-        const { id, name, image, slug, is_recommended, display_order, is_active, no_agent_discount } = body;
 
-        if (!id || !name || !slug) {
-            return NextResponse.json({ error: "ID, Name and Slug are required" }, { status: 400 });
+        // ✅ Zod Validation
+        const parseResult = updateCategorySchema.safeParse(body);
+        if (!parseResult.success) {
+            return NextResponse.json(
+                { error: parseResult.error.issues[0].message },
+                { status: 400 }
+            );
         }
+
+        const { id, name, image, slug, is_recommended, display_order, is_active, no_agent_discount } = parseResult.data;
 
         // Check for duplicate slug (excluding current category) in this shop
         const [existing] = await connection.query<RowDataPacket[]>(

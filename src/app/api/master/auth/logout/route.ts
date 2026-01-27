@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import { serialize } from "cookie";
+import { cookies } from "next/headers";
 
 export async function POST() {
-    const cookie = serialize("token", "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 0, // Expire immediately
-    });
+    const cookieStore = await cookies();
 
-    const res = NextResponse.json({ message: "Logged out" });
-    res.headers.set("Set-Cookie", cookie);
-    return res;
+    // Clear the single token cookie (and legacy refresh_token if exists)
+    cookieStore.set("token", "", { maxAge: 0, path: "/" });
+    cookieStore.set("refresh_token", "", { maxAge: 0, path: "/" });
+
+    return NextResponse.json({ message: "ออกจากระบบเรียบร้อยแล้ว" });
 }
