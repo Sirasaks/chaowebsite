@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Table,
     TableBody,
@@ -115,13 +116,53 @@ export default function ManualOrdersPage() {
         }
     };
 
+    // URL Pagination
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pageParam = parseInt(searchParams.get("page") || "1");
+    const [page, setPage] = useState(pageParam);
+    const itemsPerPage = 10;
+
+    useEffect(() => {
+        const p = parseInt(searchParams.get("page") || "1");
+        setPage(p);
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (!searchParams.has("page")) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("page", "1");
+            router.replace(`?${params.toString()}`);
+        }
+    }, []);
+
+    const updateUrl = (p: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", p.toString());
+        router.push(`?${params.toString()}`);
+    }
+
     const filteredOrders = orders.filter(order =>
         order.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toString().includes(searchTerm)
     );
 
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
+    const paginatedOrders = filteredOrders.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            updateUrl(newPage);
+        }
+    };
+
+    // Reset to page 1 on search
+    useEffect(() => {
+        if (searchTerm && page !== 1) {
+            updateUrl(1);
+        }
+    }, [searchTerm]);
 
     return (
         <div className="space-y-6">
@@ -137,11 +178,11 @@ export default function ManualOrdersPage() {
                             placeholder="ค้นหา User, ID, สินค้า..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-8"
+                            className="pl-8 bg-background"
                         />
                     </div>
                     <Badge variant="secondary" className="text-base px-3 py-1 h-10 flex items-center">
-                        รอตรวจสอบ {orders.length}
+                        รอตรวจสอบ {filteredOrders.length}
                     </Badge>
                 </div>
             </div>
@@ -171,7 +212,7 @@ export default function ManualOrdersPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredOrders.map((order) => (
+                                paginatedOrders.map((order) => (
                                     <TableRow key={order.id}>
                                         <TableCell className="whitespace-nowrap align-top">
                                             {format(new Date(order.created_at), "d MMM yyyy HH:mm", { locale: th })}
@@ -217,6 +258,31 @@ export default function ManualOrdersPage() {
                             )}
                         </TableBody>
                     </Table>
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-end space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page === 1}
+                    >
+                        ก่อนหน้า
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                        หน้า {page} จาก {totalPages}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={page === totalPages}
+                    >
+                        ถัดไป
+                    </Button>
                 </div>
             )}
 

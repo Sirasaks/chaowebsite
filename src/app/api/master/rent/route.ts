@@ -161,8 +161,8 @@ export async function POST(request: Request) {
 
             // Initialize Shop Settings (Optional)
             await connection.query(
-                "INSERT INTO site_settings (shop_id, site_title, announcement_text, site_logo) VALUES (?, ?, ?, ?)",
-                [shopId, shopName, "ยินดีต้อนรับสู่ร้านค้าของเรา! ติดต่อสอบถามได้ตลอด 24 ชม.", "https://placehold.co/200x60/95a5a6/ffffff?text=Logo+200x60"]
+                "INSERT INTO site_settings (shop_id, site_title, announcement_text, site_logo, site_font) VALUES (?, ?, ?, ?, ?)",
+                [shopId, shopName, "ยินดีต้อนรับสู่ร้านค้าของเรา! ติดต่อสอบถามได้ตลอด 24 ชม.", "https://placehold.co/200x60/95a5a6/ffffff?text=Logo+200x60", "ibm_plex_sans_thai"]
             );
 
             // Initialize Default Topup Settings (Disabled by default)

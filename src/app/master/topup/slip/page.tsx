@@ -109,7 +109,7 @@ export default function MasterTopupSlipPage() {
 
             <Card className="border-none shadow-lg bg-card text-card-foreground/80 backdrop-blur-sm">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold bg-blue-600 bg-clip-text text-transparent">
+                    <CardTitle className="text-2xl font-semibold bg-blue-600 bg-clip-text text-transparent">
                         เติมเงินผ่านธนาคาร
                     </CardTitle>
                     <CardDescription>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +70,32 @@ export default function AdminMemberPage() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
+    // URL Pagination
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pageParam = parseInt(searchParams.get("page") || "1");
+    const [page, setPage] = useState(pageParam);
+    const itemsPerPage = 10;
+
+    useEffect(() => {
+        const p = parseInt(searchParams.get("page") || "1");
+        setPage(p);
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (!searchParams.has("page")) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("page", "1");
+            router.replace(`?${params.toString()}`);
+        }
+    }, [searchParams]); // Added searchParams dep to be safe, but mostly runs on mount if empty query
+
+    const updateUrl = (p: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", p.toString());
+        router.push(`?${params.toString()}`);
+    }
+
     const fetchUsers = async () => {
         setLoading(true);
         try {
@@ -92,11 +119,33 @@ export default function AdminMemberPage() {
 
     useEffect(() => {
         fetchUsers();
-    }, [roleFilter]);
+    }, [roleFilter]); // Removed search dependency to avoid double fetch if search is handled by button/enter.
+    // Wait, the original code had:
+    /*
+        const handleSearch = (e: React.FormEvent) => {
+            e.preventDefault();
+            fetchUsers();
+        };
+    */
+
+    // If search changes and user hits enter, fetchUsers is called.
+    // We should also reset page to 1 when fetching with new filters?
+    // Let's modify handleSearch.
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        updateUrl(1); // Set page to 1
         fetchUsers();
+    };
+
+    // Client-side pagination logic
+    const totalPages = Math.ceil(users.length / itemsPerPage) || 1;
+    const paginatedUsers = users.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            updateUrl(newPage);
+        }
     };
 
     const openCreditDialog = (user: User, type: "add" | "subtract") => {
@@ -238,7 +287,7 @@ export default function AdminMemberPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
-                            className="pl-8"
+                            className="pl-8 bg-background"
                         />
                     </div>
                 </div>
@@ -312,7 +361,7 @@ export default function AdminMemberPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            users.map((user) => (
+                            paginatedUsers.map((user) => (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{user.username}</TableCell>
                                     <TableCell>{user.email}</TableCell>

@@ -20,7 +20,7 @@ export function RecommendedCategories({ categories }: RecommendedCategoriesProps
         <section className="pb-2">
             <div className="mx-auto max-w-7xl px-4 py-4">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">หมวดหมู่แนะนำ</h2>
+                    <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">หมวดหมู่แนะนำ</h2>
                     <Button asChild size="sm">
                         <Link href="/categories">ดูเพิ่มเติม →</Link>
                     </Button>

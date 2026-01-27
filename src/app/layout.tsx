@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_Thai, Prompt, Kanit, Pridi } from "next/font/google";
+import { Noto_Sans_Thai, Prompt, Kanit, IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { getCachedSettings } from "@/lib/settings-cache";
@@ -32,11 +32,11 @@ const kanit = Kanit({
   variable: '--font-kanit',
 });
 
-const pridi = Pridi({
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
   subsets: ["thai", "latin"],
   weight: ["400", "500", "600", "700"],
   display: 'swap',
-  variable: '--font-pridi',
+  variable: '--font-ibm-plex-sans-thai',
 });
 
 // Font mapping
@@ -44,7 +44,7 @@ const fontMap: Record<string, { variable: string; className: string }> = {
   noto_sans_thai: { variable: '--font-noto-sans-thai', className: notoSansThai.className },
   prompt: { variable: '--font-prompt', className: prompt.className },
   kanit: { variable: '--font-kanit', className: kanit.className },
-  pridi: { variable: '--font-pridi', className: pridi.className },
+  ibm_plex_sans_thai: { variable: '--font-ibm-plex-sans-thai', className: ibmPlexSansThai.className },
 };
 
 export async function generateMetadata(): Promise<Metadata> {

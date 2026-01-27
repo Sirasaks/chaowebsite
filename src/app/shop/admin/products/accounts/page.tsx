@@ -238,7 +238,7 @@ export default function AdminAccountsPage() {
                         placeholder="ค้นหาสินค้า..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-8"
+                        className="pl-8 bg-background"
                     />
                 </div>
             </div>

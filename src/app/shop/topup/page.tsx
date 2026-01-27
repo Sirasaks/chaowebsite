@@ -40,7 +40,7 @@ export default function TopupPage() {
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-4xl">
-            <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-semibold text-center mb-8 bg-gradient-to-r from-primary to-primary bg-clip-text text-transparent">
                 เลือกช่องทางการเติมเงิน
             </h1>
 

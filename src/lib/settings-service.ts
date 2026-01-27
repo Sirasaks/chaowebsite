@@ -11,7 +11,7 @@ export interface SiteSettings {
     primary_color: string;
     secondary_color: string;
     contact_link?: string;
-    site_font?: string;
+    site_font: string;
 }
 
 export async function getSiteSettings(shopIdOverride?: number): Promise<SiteSettings> {
@@ -37,7 +37,8 @@ export async function getSiteSettings(shopIdOverride?: number): Promise<SiteSett
                 site_background: '',
                 primary_color: '#ea580c',
                 secondary_color: '#8b5cf6',
-                contact_link: ''
+                contact_link: '',
+                site_font: 'ibm_plex_sans_thai'
             };
         }
 
@@ -52,7 +53,8 @@ export async function getSiteSettings(shopIdOverride?: number): Promise<SiteSett
             site_background: '',
             primary_color: '#ea580c',
             secondary_color: '#8b5cf6',
-            contact_link: ''
+            contact_link: '',
+            site_font: 'ibm_plex_sans_thai'
         };
     } finally {
         connection.release();

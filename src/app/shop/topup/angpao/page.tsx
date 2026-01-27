@@ -103,7 +103,7 @@ export default function TopupAngpaoPage() {
                     <div className="mx-auto w-16 h-16  rounded-full flex items-center justify-center mb-4">
                         <Gift className="w-8 h-8 text-primary " />
                     </div>
-                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    <CardTitle className="text-2xl font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         TrueMoney Wallet (อั่งเปา)
                     </CardTitle>
                     <CardDescription>

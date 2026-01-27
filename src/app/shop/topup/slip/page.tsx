@@ -132,7 +132,7 @@ export default function TopupSlipPage() {
 
             <Card className="border shadow-lg bg-card text-card-foreground backdrop-blur-sm">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    <CardTitle className="text-2xl font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         เติมเงินผ่านธนาคาร
                     </CardTitle>
                     <CardDescription>

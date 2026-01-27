@@ -30,7 +30,7 @@ export async function GET(req: Request) {
                 secondary_color: '#8b5cf6',
                 contact_link: '',
                 announcement_text: '',
-                site_font: 'noto_sans_thai'
+                site_font: 'ibm_plex_sans_thai'
             }, {
                 headers: {
                     'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200'

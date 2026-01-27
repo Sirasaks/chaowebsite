@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Table,
     TableBody,
@@ -40,29 +41,77 @@ interface Order {
     created_at: string;
 }
 
+import { Suspense } from "react";
+
 export default function AdminOrderHistoryPage() {
+    return (
+        <Suspense fallback={<OrderTableSkeleton />}>
+            <OrderHistoryContent />
+        </Suspense>
+    );
+}
+
+function OrderHistoryContent() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
-    // Pagination State
-    const [page, setPage] = useState(1);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Pagination State (Synced with URL)
+    const pageParam = parseInt(searchParams.get("page") || "1");
+    const [page, setPage] = useState(pageParam);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
+    // Initial sync for debounced search to avoid empty fetch if we had initial search param (if implemented later)
+    // For now dealing with default empty search.
+
+    // Update debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Sync page state when URL changes
+    useEffect(() => {
+        const p = parseInt(searchParams.get("page") || "1");
+        setPage(p);
+    }, [searchParams]);
+
+    const updateUrl = (p: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", p.toString());
+        router.push(`?${params.toString()}`);
+    }
+
+    // Reset to page 1 when search term actually changes
+    useEffect(() => {
+        // If query (debounced) changes, we should reset to page 1.
+        // We check if page is already 1 to avoid redundant URL updates.
+        // Also need to ignore the initial mount if it matches? 
+        // This simple check is enough: if page > 1, go to 1.
+        if (page !== 1) {
+            updateUrl(1);
+        }
+    }, [debouncedSearch]);
+
+    // Fetch Data
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/shop/admin/orders/history?page=${page}&limit=10&search=${encodeURIComponent(searchTerm)}`);
+            const res = await fetch(`/api/shop/admin/orders/history?page=${page}&limit=10&search=${encodeURIComponent(debouncedSearch)}`);
             if (res.ok) {
                 const data = await res.json();
-                // Handle new API format
                 if (data.pagination) {
                     setOrders(data.data);
                     setTotalPages(data.pagination.totalPages);
                     setTotalItems(data.pagination.totalItems);
                 } else {
-                    // Fallback for old API if cached or mismatch
                     setOrders(data);
                 }
             }
@@ -74,32 +123,17 @@ export default function AdminOrderHistoryPage() {
         }
     };
 
-    // Debounce search (Reset to page 1 on search)
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            setPage(1); // Reset page on new search
-            fetchOrders();
-        }, 500);
-        return () => clearTimeout(timeoutId);
-    }, [searchTerm]);
-
-    // Fetch on page change (skip initial mount if handled by above effect, but simpler to just split effects or allow double fetch safely)
-    // Actually, better to have one effect for query params.
+    // Trigger fetch when dependecies change
     useEffect(() => {
         fetchOrders();
-    }, [page]);
+    }, [page, debouncedSearch]);
 
-    // Note: The above might cause double fetch on search change because setSearch triggers setPage(1). 
-    // Optimization: separate search effect to just setPage(1), and have page/search dependency on fetch effect.
-    // Refactored Effect Logic:
-
-    /* 
-       Refactored logic to avoid double fetch:
-       1. useEffect[searchTerm] -> sets page=1.
-       2. useEffect[page, searchTerm] -> fetches. 
-       But if searchTerm changes, page sets to 1. If page was already 1, user effect runs once. If page was 2, it changes to 1, effect runs.
-       The issue is if page is already 1, setPage(1) doesn't trigger re-render, so we need to fetch manually or add searchTerm to dependency.
-    */
+    // Ensure default page param (fix for missing param)
+    useEffect(() => {
+        if (!searchParams.has("page")) {
+            updateUrl(1);
+        }
+    }, []);
 
     const renderCustomerData = (dataStr: string) => {
         try {
@@ -132,7 +166,7 @@ export default function AdminOrderHistoryPage() {
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= totalPages) {
-            setPage(newPage);
+            updateUrl(newPage);
         }
     };
 
@@ -149,7 +183,7 @@ export default function AdminOrderHistoryPage() {
                         placeholder="ค้นหา User, ID, สินค้า..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
+                        className="pl-8 bg-background"
                     />
                 </div>
             </div>

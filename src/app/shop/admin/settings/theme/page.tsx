@@ -21,7 +21,7 @@ interface ThemeSettings {
 const FONT_OPTIONS = [
     { value: "noto_sans_thai", label: "Noto Sans Thai", description: "ฟอนต์ปัจจุบัน (Google)", fontFamily: "'Noto Sans Thai', sans-serif" },
     { value: "prompt", label: "Prompt", description: "ฟอนต์ทันสมัย ดูสะอาดตา", fontFamily: "'Prompt', sans-serif" },
-    { value: "pridi", label: "Pridi", description: "ฟอนต์คลาสสิก หรูหรา", fontFamily: "'Pridi', serif" },
+    { value: "ibm_plex_sans_thai", label: "IBM Plex Sans Thai", description: "ฟอนต์ทางการ ทันสมัย", fontFamily: "'IBM Plex Sans Thai', sans-serif" },
     { value: "kanit", label: "Kanit", description: "ฟอนต์ยอดนิยม อ่านง่าย", fontFamily: "'Kanit', sans-serif" },
 ];
 

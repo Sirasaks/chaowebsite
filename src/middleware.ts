@@ -56,8 +56,9 @@ export async function middleware(req: NextRequest) {
         });
     }
 
-    // Auth Protection for Topup Sub-pages
-    if (pathname.startsWith("/topup/") && (pathname.includes("/slip") || pathname.includes("/angpao"))) {
+    // Auth Protection for Protected User Routes
+    const protectedRoutes = ["/settings", "/profile", "/history", "/topup-history", "/topup/slip", "/topup/angpao"];
+    if (protectedRoutes.some(route => pathname.startsWith(route))) {
         const token = req.cookies.get("token");
         if (!token) {
             const loginUrl = new URL("/login", req.url);
