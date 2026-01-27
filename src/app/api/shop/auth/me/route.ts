@@ -16,7 +16,18 @@ export async function GET(req: Request) {
     if (!token) return NextResponse.json({ user: null });
 
     const secret = getJwtSecret();
-    const decoded = jwt.verify(token, secret) as { userId: number; role?: string };
+
+    let decoded: { userId: number; role?: string };
+    try {
+      decoded = jwt.verify(token, secret) as { userId: number; role?: string };
+    } catch (jwtError: any) {
+      // Token expired or invalid - return 401 to trigger refresh
+      if (jwtError.name === 'TokenExpiredError') {
+        return NextResponse.json({ error: "Token expired" }, { status: 401 });
+      }
+      // Other JWT errors (invalid signature, etc.)
+      return NextResponse.json({ user: null });
+    }
 
     // Verify user belongs to this shop
     const [rows] = await pool.query(
@@ -34,7 +45,7 @@ export async function GET(req: Request) {
       const newToken = jwt.sign(
         { userId: user.id, role: user.role, tokenType: 'shop' },
         secret,
-        { expiresIn: "7d" }
+        { expiresIn: "15m" }
       );
 
       // Update cookie
@@ -43,7 +54,7 @@ export async function GET(req: Request) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60,
+        maxAge: 15 * 60, // 15 minutes
       });
     }
 

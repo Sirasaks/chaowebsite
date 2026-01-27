@@ -105,20 +105,20 @@ function BrowserMockup({ imageSrc }: { imageSrc: string }) {
 
 const features = [
     {
-        title: "Advanced AI Algorithms",
-        description: "Our platform utilizes cutting-edge AI algorithms to provide accurate and efficient solutions for your business needs.",
+        title: "ระบบชำระเงินอัตโนมัติ",
+        description: "รองรับการชำระเงินหลายช่องทาง ทั้งซองอั่งเปา TrueMoney และระบบ Verify Slip อัตโนมัติ ยืนยันการชำระเงินได้ทันที",
         hoverColor: "hover:bg-red-500/10",
         image: "/dashboard.png",
     },
     {
-        title: "Secure Data Handling",
-        description: "We prioritize your data security with state-of-the-art encryption and strict privacy protocols, ensuring your information remains confidential.",
+        title: "ปรับแต่งธีมได้อิสระ",
+        description: "ตกแต่งหน้าเว็บไซต์ได้ตามต้องการ เปลี่ยนสี โลโก้ และ Banner ได้ง่าย ไม่ต้องเขียนโค้ด สร้างแบรนด์ที่เป็นเอกลักษณ์ของคุณ",
         hoverColor: "hover:bg-blue-500/10",
         image: "/dashboard.png",
     },
     {
-        title: "Customizable Solutions",
-        description: "Tailor our AI services to your specific needs with flexible customization options, allowing you to get the most out of our platform.",
+        title: "รองรับสินค้าหลายประเภท",
+        description: "ขายสินค้าแบบไอดี/รหัสส่งอัตโนมัติ หรือสินค้าแบบกรอกข้อมูลที่ต้องดำเนินการเอง ยืดหยุ่นตามรูปแบบธุรกิจของคุณ",
         hoverColor: "hover:bg-green-500/10",
         image: "/dashboard.png",
     },
@@ -129,36 +129,45 @@ export function FeaturesSection() {
 
     return (
         <section className="py-24 bg-card" ref={featuresSection.ref}>
-            <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-6 px-6">
-                {features.map((feature, index) => (
-                    <div
-                        key={index}
-                        className={`group relative items-start overflow-hidden bg-neutral-50 dark:bg-neutral-800 p-6 rounded-2xl ${feature.hoverColor} transition-all duration-500 ease-out h-80 ${index === features.length - 1 ? 'md:col-span-2' : ''}`}
-                        style={{
-                            opacity: featuresSection.isVisible ? 1 : 0,
-                            transform: featuresSection.isVisible ? 'none' : 'translateY(20px)',
-                            transitionDelay: `${index * 100}ms`,
-                        }}
-                    >
-                        <div>
-                            {/* Title */}
-                            <h3 className="font-semibold mb-2 text-primary">
-                                {feature.title}
-                            </h3>
+            <div className="mx-auto max-w-7xl px-6">
+                {/* Section Heading */}
+                <div className={`text-center mb-16 transition-all duration-700 ${featuresSection.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+                    <h2 className="text-3xl font-bold text-foreground">ทำไมต้องเลือกเรา</h2>
+                    <p className="mt-3 text-lg text-muted-foreground">ฟีเจอร์ครบครันที่จะช่วยให้ธุรกิจของคุณเติบโต</p>
+                </div>
 
-                            {/* Description */}
-                            <p className="text-foreground">
-                                {feature.description}
-                            </p>
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {features.map((feature, index) => (
+                        <div
+                            key={index}
+                            className={`group relative items-start overflow-hidden bg-neutral-50 dark:bg-neutral-800 p-6 rounded-2xl ${feature.hoverColor} transition-all duration-500 ease-out h-80 ${index === features.length - 1 ? 'md:col-span-2' : ''}`}
+                            style={{
+                                opacity: featuresSection.isVisible ? 1 : 0,
+                                transform: featuresSection.isVisible ? 'none' : 'translateY(20px)',
+                                transitionDelay: `${index * 100}ms`,
+                            }}
+                        >
+                            <div>
+                                {/* Title */}
+                                <h3 className="font-semibold mb-2 text-primary">
+                                    {feature.title}
+                                </h3>
+
+                                {/* Description */}
+                                <p className="text-foreground">
+                                    {feature.description}
+                                </p>
+                            </div>
+
+                            {/* Browser Mockup */}
+                            <BrowserMockup imageSrc={feature.image} />
+
+                            {/* Bottom Gradient Fade */}
+                            <div className="absolute bottom-0 left-0 h-32 w-full bg-linear-to-t from-neutral-50 dark:from-neutral-900 pointer-events-none" />
                         </div>
-
-                        {/* Browser Mockup */}
-                        <BrowserMockup imageSrc={feature.image} />
-
-                        {/* Bottom Gradient Fade */}
-                        <div className="absolute bottom-0 left-0 h-32 w-full bg-linear-to-t from-neutral-50 dark:from-neutral-900 pointer-events-none" />
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </section>
     );

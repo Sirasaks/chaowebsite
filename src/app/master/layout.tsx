@@ -18,7 +18,7 @@ export default function MasterLayout({
         <MasterAuthProvider>
             <div className={`flex min-h-screen flex-col bg-slate-50 ${ibmPlexSansThai.className} ${ibmPlexSansThai.variable}`}>
                 <MasterNavbar />
-                <main className="flex-1 font-sans">{children}</main>
+                <main className="flex-1 font-sans pt-16">{children}</main>
             </div>
         </MasterAuthProvider>
     );

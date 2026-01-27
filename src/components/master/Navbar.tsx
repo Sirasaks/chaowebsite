@@ -78,30 +78,54 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
         return null
     }
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-card text-card-foreground p-2">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="flex justify-between items-center h-12">
+        <nav className="fixed top-0 left-0 w-full z-50 bg-background/80 backdrop-blur-md border-b  p-3">
+            <div className="container mx-auto flex justify-between items-center max-w-7xl px-4">
 
-                    {/* Left — Logo + Desktop Menu */}
-                    <div className="flex items-center space-x-4">
-                        <Link href="/" className="font-bold text-2xl flex items-center gap-2 text-primary">
-                            {logo ? (
-                                <img src={logo} alt={title || "Logo"} className="h-8 w-auto object-contain" />
-                            ) : (
-                                <span>{title || "ChaoWeb Master"}</span>
-                            )}
-                        </Link>
-                        <div className="hidden md:flex items-center space-x-1">
-                            <Link href="/"><Button variant="ghost" className={pathname === "/" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Home className="mr-2 h-4 w-4" />หน้าแรก</Button></Link>
-                            <Link href="/topup"><Button variant="ghost" className={pathname?.startsWith("/topup") ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><Wallet className="mr-2 h-4 w-4" />เติมเงิน</Button></Link>
-                            <Link href="/shop"><Button variant="ghost" className={pathname === "/shop" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><ShoppingBag className="mr-2 h-4 w-4" />เช่าเว็บไซต์</Button></Link>
-                            <Link href="/contact"><Button variant="ghost" className={pathname === "/contact" ? "bg-primary text-white hover:text-white hover:bg-primary/80" : ""}><PhoneIcon className="mr-2 h-4 w-4" />ติดต่อเรา</Button></Link>
-                        </div>
-                    </div>
+                {/* Left — Logo + Desktop Menu */}
+                <div className="flex items-center space-x-8">
+                    <Link href="/" className="flex items-center space-x-2">
+                        {logo ? (
+                            <img src={logo} alt={title || "Logo"} className="h-10 w-10 object-contain" />
+                        ) : (
+                            <img src="/vercel.svg" alt="ChaoWeb" className="h-10 w-10 object-contain" />
+                        )}
+                    </Link>
+                    <ul className="hidden md:flex items-center space-x-1">
+                        <li>
+                            <Link href="/">
+                                <Button variant="ghost" size="sm" className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-transparent">
+                                    <Home className="mr-1.5 h-4 w-4" />หน้าแรก
+                                </Button>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/topup">
+                                <Button variant="ghost" size="sm" className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-transparent">
+                                    <Wallet className="mr-1.5 h-4 w-4" />เติมเงิน
+                                </Button>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/shop">
+                                <Button variant="ghost" size="sm" className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-transparent">
+                                    <ShoppingBag className="mr-1.5 h-4 w-4" />เช่าเว็บไซต์
+                                </Button>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/contact">
+                                <Button variant="ghost" size="sm" className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-transparent">
+                                    <PhoneIcon className="mr-1.5 h-4 w-4" />ติดต่อเรา
+                                </Button>
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
 
-                    {/* Right — Mobile Menu + Avatar */}
-                    <div className="flex items-center gap-2">
-                        {/* Mobile Hamburger Menu */}
+                {/* Right — Mobile Menu + Avatar */}
+                <div className="flex items-center gap-2">
+                    {/* Mobile Hamburger Menu */}
+                    {mounted && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -133,150 +157,149 @@ export function MasterNavbar({ logo, title }: NavbarProps) {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    )}
 
-                        {/* Desktop Auth Buttons / Avatar */}
-                        <div className="hidden md:flex items-center gap-4">
-                            {(!mounted || loading) ? (
-                                <div className="h-10 w-10 flex items-center justify-center">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                </div>
-                            ) : user ? (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage src="" alt={user.username} />
-                                                <AvatarFallback className="bg-primary text-white font-semibold">
-                                                    {user.username.charAt(0).toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </Button>
-                                    </DropdownMenuTrigger>
+                    {/* Desktop Auth Buttons / Avatar */}
+                    <div className="hidden md:flex items-center gap-4">
+                        {(!mounted || loading) ? (
+                            <div className="h-10 w-10 flex items-center justify-center">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                        ) : user ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src="" alt={user.username} />
+                                            <AvatarFallback className="bg-primary text-white font-semibold">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
 
-                                    <DropdownMenuContent align="end" className="w-56 p-2">
-                                        <DropdownMenuLabel>
-                                            <div className="flex flex-col space-y-1">
-                                                <p className="leading-none">{user.username}</p>
-                                                <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-primary text-white w-fit shadow-sm">
-                                                    <Wallet className="mr-2 h-4 w-4" />
-                                                    <p className="text-xs font-medium">เครดิต: {Number(user.credit).toFixed(2)} บาท</p>
-                                                </div>
+                                <DropdownMenuContent align="end" className="w-56 p-2">
+                                    <DropdownMenuLabel>
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="leading-none">{user.username}</p>
+                                            <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-primary text-white w-fit shadow-sm">
+                                                <Wallet className="mr-2 h-4 w-4" />
+                                                <p className="text-xs font-medium">เครดิต: {Number(user.credit).toFixed(2)} บาท</p>
                                             </div>
-                                        </DropdownMenuLabel>
+                                        </div>
+                                    </DropdownMenuLabel>
 
-                                        <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator />
 
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
-                                        </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
+                                    </DropdownMenuItem>
 
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/profile"><UserIcon className="text-black mr-2 h-4 w-4" />โปรไฟล์</Link>
-                                        </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profile"><UserIcon className="text-black mr-2 h-4 w-4" />โปรไฟล์</Link>
+                                    </DropdownMenuItem>
 
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งซื้อ</Link>
-                                        </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งซื้อ</Link>
+                                    </DropdownMenuItem>
 
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/topup-history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งเติมเงิน</Link>
-                                        </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/topup-history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งเติมเงิน</Link>
+                                    </DropdownMenuItem>
 
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/settings"><Settings className="text-black mr-2 h-4 w-4" />ตั้งค่า</Link>
-                                        </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/settings"><Settings className="text-black mr-2 h-4 w-4" />ตั้งค่า</Link>
+                                    </DropdownMenuItem>
 
-                                        <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator />
 
-                                        <DropdownMenuItem onClick={logout} className="cursor-pointer">
-                                            <LogOut className=" text-black mr-2 h-4 w-4" />
-                                            ออกจากระบบ
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            ) : (
-                                <div className="flex items-center gap-4">
-                                    <Button asChild variant="outline">
-                                        <Link href="/login"><LogIn className="mr-2 h-4 w-4" />เข้าสู่ระบบ</Link>
-                                    </Button>
-                                    <Button asChild className="bg-primary hover:bg-primary/80">
-                                        <Link href="/register"><UserPlus className="mr-2 h-4 w-4" />สมัครสมาชิก</Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Mobile Avatar */}
-                        <div className="md:hidden">
-                            {(!mounted || loading) ? (
-                                <Loader2 className="h-6 w-6 animate-spin" />
-                            ) : user ? (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage src="" alt={user.username} />
-                                                <AvatarFallback className="bg-primary text-white font-semibold">
-                                                    {user.username.charAt(0).toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-
-                                    <DropdownMenuContent align="end" className="w-56 p-2">
-                                        <DropdownMenuLabel>
-                                            <div className="flex flex-col space-y-1">
-                                                <p className="leading-none">{user.username}</p>
-                                                <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-blue-600 text-white w-fit shadow-sm">
-                                                    <Wallet className="mr-2 h-3.5 w-3.5" />
-                                                    <p className="text-xs font-medium">เครดิต: {Number(user.credit).toFixed(2)} บาท</p>
-                                                </div>
-                                            </div>
-                                        </DropdownMenuLabel>
-
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/profile"><UserIcon className="text-black mr-2 h-4 w-4" />โปรไฟล์</Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งซื้อ</Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/topup-history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งเติมเงิน</Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/settings"><Settings className="text-black mr-2 h-4 w-4" />ตั้งค่า</Link>
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuSeparator />
-
-                                        <DropdownMenuItem onClick={logout} className="cursor-pointer">
-                                            <LogOut className=" text-black mr-2 h-4 w-4" />
-                                            ออกจากระบบ
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href="/login"><LogIn className="h-4 w-4" /></Link>
-                                    </Button>
-                                    <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
-                                        <Link href="/register"><UserPlus className="h-4 w-4" /></Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+                                    <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                                        <LogOut className=" text-black mr-2 h-4 w-4" />
+                                        ออกจากระบบ
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <div className="flex items-center gap-4">
+                                <Button asChild variant="outline">
+                                    <Link href="/login"><LogIn className="mr-2 h-4 w-4" />เริ่มต้นใช้งาน</Link>
+                                </Button>
+                                <Button asChild className="bg-primary hover:bg-primary/80">
+                                    <Link href="/register"><UserPlus className="mr-2 h-4 w-4" />สมัครสมาชิก</Link>
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
+                    {/* Mobile Avatar */}
+                    <div className="md:hidden">
+                        {(!mounted || loading) ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                        ) : user ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src="" alt={user.username} />
+                                            <AvatarFallback className="bg-primary text-white font-semibold">
+                                                {user.username.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+
+                                <DropdownMenuContent align="end" className="w-56 p-2">
+                                    <DropdownMenuLabel>
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="leading-none">{user.username}</p>
+                                            <div className="flex items-center mt-1 px-3 py-1.5 rounded-full bg-blue-600 text-white w-fit shadow-sm">
+                                                <Wallet className="mr-2 h-3.5 w-3.5" />
+                                                <p className="text-xs font-medium">เครดิต: {Number(user.credit).toFixed(2)} บาท</p>
+                                            </div>
+                                        </div>
+                                    </DropdownMenuLabel>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/"><LayoutDashboard className="text-black mr-2 h-4 w-4" />Dashboard</Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profile"><UserIcon className="text-black mr-2 h-4 w-4" />โปรไฟล์</Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งซื้อ</Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/topup-history"><History className="text-black mr-2 h-4 w-4" />ประวัติสั่งเติมเงิน</Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/settings"><Settings className="text-black mr-2 h-4 w-4" />ตั้งค่า</Link>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuSeparator />
+
+                                    <DropdownMenuItem onClick={logout} className="cursor-pointer">
+                                        <LogOut className=" text-black mr-2 h-4 w-4" />
+                                        ออกจากระบบ
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href="/login"><LogIn className="h-4 w-4" /></Link>
+                                </Button>
+                                <Button asChild size="sm" className="bg-primary hover:bg-primary/80">
+                                    <Link href="/register"><UserPlus className="h-4 w-4" /></Link>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </nav>

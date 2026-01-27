@@ -31,17 +31,12 @@ export function ShopClient({ products }: ShopClientProps) {
     };
 
     return (
-        <div className="container mx-auto py-12 px-4">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    เลือกแพ็คเกจเช่าเว็บไซต์
-                </h1>
-                <p className="text-gray-600 text-lg">
-                    เริ่มต้นธุรกิจของคุณได้ง่ายๆ ด้วยแพ็คเกจที่เหมาะสมกับคุณ
-                </p>
-            </div>
+        <div className="container mx-auto py-10 px-4 max-w-4xl">
+            <h1 className="text-3xl font-semibold text-center mb-8 bg-blue-600 bg-clip-text text-transparent">
+                เลือกแพ็คเกจเช่าเว็บไซต์
+            </h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
                     <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
                         <CardHeader>
