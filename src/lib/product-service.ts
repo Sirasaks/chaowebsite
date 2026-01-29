@@ -120,13 +120,13 @@ async function fetchProductBySlug(slug: string, shopId?: number): Promise<Produc
 export const getProductsByCategoryId = unstable_cache(
     async (categoryId: number, shopId: number) => fetchProductsByCategoryId(categoryId, shopId),
     ['category-products'],
-    { revalidate: 60, tags: ['products'] }
+    { revalidate: false, tags: ['products'] }
 );
 
 export const getProductBySlug = unstable_cache(
     async (slug: string, shopId?: number) => fetchProductBySlug(slug, shopId),
     ['product-detail'],
-    { revalidate: 60, tags: ['products'] }
+    { revalidate: false, tags: ['products'] }
 );
 
 

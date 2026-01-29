@@ -90,37 +90,37 @@ async function fetchAnnouncement(shopId: number) {
 export const getShopSlideshow = unstable_cache(
     async (shopId: number) => fetchShopSlideshow(shopId),
     ['shop-slideshow'],
-    { revalidate: 3600, tags: ['slideshow'] }
+    { revalidate: false, tags: ['slideshow'] }
 );
 
 export const getShopStats = unstable_cache(
     async (shopId: number) => fetchShopStats(shopId),
     ['shop-stats'],
-    { revalidate: 300, tags: ['stats'] } // Stats change often, 5 mins cache
+    { revalidate: false, tags: ['stats'] }
 );
 
 export const getQuickLinks = unstable_cache(
     async (shopId: number) => fetchQuickLinks(shopId),
     ['shop-quicklinks'],
-    { revalidate: 3600, tags: ['quick-links'] }
+    { revalidate: false, tags: ['quick-links'] }
 );
 
 export const getRecommendedCategories = unstable_cache(
     async (shopId: number) => fetchRecommendedCategories(shopId),
     ['shop-categories-rec'],
-    { revalidate: 3600, tags: ['categories'] }
+    { revalidate: false, tags: ['categories'] }
 );
 
 export const getRecommendedProducts = unstable_cache(
     async (shopId: number) => fetchRecommendedProducts(shopId),
     ['shop-products-rec'],
-    { revalidate: 60, tags: ['products'] } // Products change often, 60s cache
+    { revalidate: false, tags: ['products'] }
 );
 
 export const getAnnouncement = unstable_cache(
     async (shopId: number) => fetchAnnouncement(shopId),
     ['shop-announcement'],
-    { revalidate: 3600, tags: ['settings'] }
+    { revalidate: false, tags: ['settings'] }
 );
 
 // --- Legacy Monolith (For backward compat if needed, but we will move Page to use above) ---

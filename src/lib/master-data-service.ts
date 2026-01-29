@@ -63,11 +63,11 @@ async function fetchMasterPaymentSettings(): Promise<MasterPaymentSettings> {
 export const getMasterProducts = unstable_cache(
     async () => fetchMasterProducts(),
     ['master-products'],
-    { revalidate: 3600, tags: ['master-products'] }
+    { revalidate: false, tags: ['master-products'] }
 );
 
 export const getMasterPaymentSettings = unstable_cache(
     async () => fetchMasterPaymentSettings(),
     ['master-payment-settings'],
-    { revalidate: 300, tags: ['master-settings'] }
+    { revalidate: false, tags: ['master-settings'] }
 );
