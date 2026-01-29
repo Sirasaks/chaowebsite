@@ -10,15 +10,18 @@ import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
 
+// Helper to coerce number/boolean to boolean
+const booleanOrNumber = z.union([z.boolean(), z.number()]).transform(val => Boolean(val));
+
 // ✅ Zod Schemas for Input Validation
 const createCategorySchema = z.object({
     name: z.string().min(1, "กรุณากรอกชื่อหมวดหมู่").max(100),
     image: z.string().url().optional().or(z.literal("")),
     slug: z.string().regex(/^[a-z0-9-]*$/, "URL ต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์เล็ก ตัวเลข หรือ - เท่านั้น").optional(),
-    is_recommended: z.boolean().optional(),
+    is_recommended: booleanOrNumber.optional(),
     display_order: z.number().int().min(0).optional(),
-    is_active: z.boolean().optional(),
-    no_agent_discount: z.boolean().optional(),
+    is_active: booleanOrNumber.optional(),
+    no_agent_discount: booleanOrNumber.optional(),
 });
 
 const updateCategorySchema = z.object({
@@ -26,10 +29,10 @@ const updateCategorySchema = z.object({
     name: z.string().min(1, "กรุณากรอกชื่อหมวดหมู่").max(100),
     image: z.string().url().optional().or(z.literal("")),
     slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "URL ต้องเป็นตัวอักษรภาษาอังกฤษพิมพ์เล็ก ตัวเลข หรือ - เท่านั้น"),
-    is_recommended: z.boolean().optional(),
+    is_recommended: booleanOrNumber.optional(),
     display_order: z.number().int().min(0).optional(),
-    is_active: z.boolean().optional(),
-    no_agent_discount: z.boolean().optional(),
+    is_active: booleanOrNumber.optional(),
+    no_agent_discount: booleanOrNumber.optional(),
 });
 
 // Helper to check admin role with shop scope - SECURITY FIX

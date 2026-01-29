@@ -10,6 +10,9 @@ import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
 
+// Helper to coerce number/boolean to boolean
+const booleanOrNumber = z.union([z.boolean(), z.number()]).transform(val => Boolean(val));
+
 // ✅ Zod Schemas for Input Validation
 const createProductSchema = z.object({
     name: z.string().min(1, "กรุณากรอกชื่อสินค้า").max(200),
@@ -18,9 +21,9 @@ const createProductSchema = z.object({
     image: z.string().optional(),
     description: z.string().max(5000).optional(),
     account: z.string().optional(),
-    is_recommended: z.boolean().optional(),
+    is_recommended: booleanOrNumber.optional(),
     display_order: z.number().int().min(0).optional(),
-    is_active: z.boolean().optional(),
+    is_active: booleanOrNumber.optional(),
     category_id: z.number().int().positive().nullable().optional(),
     slug: z.string().regex(/^[a-z0-9-]*$/).optional(),
 });
@@ -32,9 +35,9 @@ const updateProductSchema = z.object({
     image: z.string().optional(),
     description: z.string().max(5000).optional(),
     account: z.string().optional(),
-    is_recommended: z.boolean().optional(),
+    is_recommended: booleanOrNumber.optional(),
     display_order: z.number().int().min(0).optional(),
-    is_active: z.boolean().optional(),
+    is_active: booleanOrNumber.optional(),
     category_id: z.number().int().positive().nullable().optional(),
     slug: z.string().regex(/^[a-z0-9-]*$/).optional(),
 });
